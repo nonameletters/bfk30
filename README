@@ -1,0 +1,243 @@
+#
+# Building BMC firmware:
+#
+
+To build the firmware you will need to clone two repositories:
+ - git@ubsrv1:bmc_bt
+   * use bmc-bb branch
+ - git@ubsrv1:chibios
+   * use bmc branch
+
+Main Makefile is located in root of bmc_bt.
+
+Build steps:
+
+1. Clone repositories.
+
+> git clone git@ubsrv1:bmc_bt
+> git clone git@ubsrv1:chibios
+> cd bmc_bt
+> git checkout bmc-bb
+> cd ../chibios
+> git checkout bmc
+
+2. Update Makefile for your environment. Some paths are hardcoded in Makefile for now. You are free to fix it if you want to.
+
+> cd bmc-bb
+> vi Makefile
+
+  Update 'CHIBIOS = ' variable, provide path to chibios repository location.
+  Update 'TRGT = ' variable, provide cross tool prefix. I used gcc-arm-none-eabi-4_9-2014q4 from linaro.
+
+3. Build.
+
+> cd bmc-bb
+> make
+
+#
+# Upload firmware, debug.
+#
+
+I use gdb to upload firmware from .elf file.
+
+After successeful build binary file should be located at bmc-bb/build/ch.elf.
+
+To upload firmware do following:
+
+1. Connect JTAG to board and turn ATX power supply. Only standby voltages are requred.
+
+2. Start openocd.
+
+> openocd -f interface/ftdi/olimex-arm-usb-ocd-h.cfg -f target/stm32f2x.cfg
+
+3. Stard gdb from crosstool chain used to build and load firmware
+
+> arm-none-eabi-gdb
+gdb> target remote localhost:3333
+gdb> monitor reset halt
+gdb> load build/ch.elf
+
+#
+# Work with BMC console.
+#
+
+Uart console is main way to work with BMC. Most of the console command have help, describing it functional. You may also read their source code. All functions located at bmc-bb/main.c.
+
+1. Connect to BMC console. You will need privileges to access tty device. Also there is know problem with modemmanager on mint machines. It tires to aquire BMC uart as moden. Possible solutions are either to stop modemmanager daemon eiter remove modemmanager package.
+
+> picocom /dev/ttyACM0
+
+2. Obtain help using console. Help command will list all available commands.
+
+ch> help
+
+3. Control power. Main power control functions are power, vtg, sqnr and atx.
+
+ - atx command used to control ATX power supply state.
+ - sqnr used to control sequencer signal.
+ - vtg command can be used to work with voltage regulators. It can take effect only if main ATX power supply is on. (12Volts is required).
+ - power command control both sequencer and atx.
+
+ Turn power on.
+
+ch> power on
+
+ Turn sequencer off.
+
+ch> sqnr 0
+
+ Turn atx off
+ch> atx 0
+
+etc...
+
+4. Change core voltage. As said above, vtg command works only if ATX main power is on. Use atx 1 to turn it without boot Baikal. Currenly output voltage is limited to 1.25V in software.
+ 
+ch> vtg v0_9 0.975
+
+4.1 Store core voltage to voltage regulator's NVRAM, stored voltage will be restored on next boot.
+
+ch> vtg v0_9 store
+
+5. Precautions with power. To avoid damage to BaikalT chip you should use following way to:
+  - Change BaikalT only when main ATX power is off. Standby power may be on during chip switch. Never turn sequencer on until BaikalT is mounted in socket.
+  - Switch boot jumper with sequencer off. Main ATX power may stay on.
+  - At high frequencies and increased voltages BaikalT might get overheated. Board does not have any BaikalT temperature feedback, so you should monitor BaikalT's temperature manually.
+
+6. Write/read boot flash. To write/read boot flash dfu-util should be used. At dfu-util operations are called to download/upload respectively. To write to flash dfu-util from mint repository can be used. To read from flash you will have to compile dfu-util due to bug in dfu-util, precompiled in mint.
+
+ Current only aligned to 256 bytes images works.
+
+ Also, you will need proper privileges to work with dfu device.
+
+ Write to flash:
+
+> dfu-util -D [path_to_image] -d abf0:1234 -a 0
+
+ Read from flash:
+
+> dfu-util -U [path_to_image] -s :[bytes_to_read] -d abf0:1234 -a 0
+
+By default dfu-util will start reading/writing from 0x0 address. Initial address can be changed using BMC console command dfu. See dfu command help for details. Dfuse also provides means to change initial address, but it is not implemented.
+
+7. Known issues.
+
+ - If BMC console or dfu-util stalls at somepoint just turn completely ATX power (including standby) and turn it on, so BMC will be rebooted.
+
+ - System does not reenumerated BMC USB device. It is a hardware problem, you have to eject BMC USB cable and insert it again to force device reenumeration. It is required procedure after BMC reboot.
+
+
+#
+# HID device.
+#
+
+1. Build. You migth need to edit bmc_bt/hid_linux_tool/Makefile for your system.
+
+> cd bmc_bt/hid_linux_tool
+> make
+
+2. HID usage. HID device can be used to monitor power state. There is a primitive tool, which can be used to read hid data to linux teminal or to mysql server.
+
+ Write data from HID to MySQL server.
+
+> bmc_hid_tool /dev/hidrawX [cpu_identifier]
+
+ Print data to linux termintal.
+
+> bmc_hid_tool /dev/hidrawX
+
+3. Known issues.
+
+
+4. Software versions
+
+host: CentOS-6.6
+
+ChibiOS versions 3.0.0 - 3.0.5 - ok with patches (v3 branch only, frozen)
+ChibiOS version  16.1.5-8 - [HAL 4.0] USB driver changed significantly
+ChibiOS version  17.6.0     [HAL 5.0]
+
+yum install picocom libusb-devel libusb dfu-util openocd python
+
+dfu-util-0.7-1.el6.x86_64 @epel -- does not support STM32
+dfu-util-0.8.tar.gz	from http://dfu-util.sourceforge.net builds ok with libusb1-devel-1.0.9-0.7.rc1.el6.x86_64 @base
+dfu-util-0.8.tar.gz	build failed (requires recent libusb1-devel)
+openocd-0.9.0		build ok http://jaist.dl.sourceforge.net/project/openocd/openocd/0.9.0/openocd-0.9.0.tar.bz2
+			./configure --enable-ftdi [--prefix=/usr] ; make; sudo make install
+openocd-0.10.0		build ok http://jaist.dl.sourceforge.net/project/openocd/openocd/0.10.0/openocd-0.10.0.tar.bz2
+gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2 https://launchpadlibrarian.net/218827486/gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2 
+gcc-linaro-5.3-2016.02-x86_64_arm-eabi.tar.xz does not work on CentOS-6.6
+
+Hints:
+  cp misc/90-olimex.rules /etc/udev/rules.d
+  usermod -a -G plugdev,dialout
+
+Commands:
+
+DFU program BMC:
+  1. Установить джампер J6
+  2. Нажать кнопку BMC Reset (лампочка горит постоянно)
+  3. sudo dfu-util -d 0483:df11 -a 0 -D build/ch.bin --dfuse-address 0x08000000
+  4. Снять J6
+  2. Нажать кнопку BMC Reset (лампочка моргает) - работает программа.
+
+Connect to BROM console via Olimex UART:
+  sudo picocom --imap lfcrlf  -lb115200 /dev/serial/by-id/usb-Olimex_Olimex_OpenOCD_JTAG_ARM-USB-OCD-H_OLUGO8BH-if01-port0
+
+Start OpenOCD
+  sudo openocd -f interface/ftdi/olimex-arm-usb-ocd-h.cfg -f target/stm32f2x.cfg
+
+Command line OpenOCD:
+  telnet localhost 4444
+
+Connect to BMC console:
+  sudo picocom -l /dev/serial/by-id/usb-Baikal_Electronics_Virtual_COM_Port_300-if01
+
+Start Voltage/power monitoring:
+  sudo hid_linux_tool/bmc_hid_tool /dev/hidraw3
+
+
+***** Замечания к схеме.
+1. Все выводы JTAG JTRST подключаются через 10к на ЗЕМЛЮ! (R38) - кроме EJTAG
+2. Все м/сх с отключаемым питанием должны подключаются к шине I2C BMC 
+   через коммутатор PCA9547 или изолятор FXMA2102: clk25 
++. Все выходы SMBAlert надо подключать. Особенно UCD9090!
++. Синхронизацию преобразователей U24,U25,U26 pin DDC лучше включить
++  Уменьшить ток синего светодиода - глаза режет и зеленый не виден.
+3. Узел J3-Q2-Q3 можно не паять.
+4. BMC COM-port (U17, U18, J7) не используется
+5. BootSD работать не будет, можно не паять J44,U52,
+6  Подключение SPI flash. -- зачем инверсия BOOT_PROG?!!!
+   Установить J45(1-2), Не ставить J41 никогда.
+9. Минимальная задержка снятия ресета - 80мс (50 мало)
++. Очень важны светодиоды состояния, цветные - не только источников, а важных сигналов
+	SYS_OK, UCD_ENABLE, CPU_RESET# итп, не обязательно на краю платы
+10. Источники LTC3447 не управляются, пока не включены:
+	невозможно установить напряжение ДО включения источника,
+	установленное напряжение не помнят.
+11. Хорошо бы PGOOD от источников VDD3V3, VDD5V, 3.3V REF CLOCKS POWER, VDD0V9_PLL
+
+*****
+
+****** Проблемы БФК 2.0
+1. Не отключается питание 12V при работе от джека (управление приходит)
+3. Нет индикации работы платы (включения всех питаний и/или снятия сброса)
+4. Температурный датчик U90 и бридж I2C/SPI U92 не работают на 400кГц, приходится тормозить всю шину.
+7. Слабое свечение + моргание светодиодов на RJ при включении кнопкой (+ был перегрев)
+8. Сгоревший 0.9
+9. Напаянный с\д светился ЯРКО!
+10. Двойной ресет
+11. Иногда не включается
+12. Инвертирован сигнал BOOT_PROG
+13. UCD, I2C/SPI+RTD не работают без 3.3/5.0 - clk25 глушит шину
+14. Overvoltage по каналам 8,9
+15. Иногда С/Д BMC "медленно разгорается" - утечка на пине BMC_LED
+16. Положение J67 ???
+17. Имеет смысл поменять местами SYSTEM_OK и UCD_NOTIF, чтобы обрабатывать прерывания от PGOOD
+
+*** Заметки
+В последнем BROM задержка 1400+ ms
+
+-r59 BFK1.6 usb hangs after power on
+
+
