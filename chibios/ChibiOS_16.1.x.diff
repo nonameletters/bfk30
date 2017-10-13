@@ -1,0 +1,32 @@
+Index: community/os/hal/include/hal_usb_hid.h
+===================================================================
+--- community/os/hal/include/hal_usb_hid.h	(revision 767)
++++ community/os/hal/include/hal_usb_hid.h	(working copy)
+@@ -534,8 +534,10 @@
+   _usb_hid_driver_data
+ };
+ 
++#ifndef USB_DRIVER_EXT_FIELDS
+ #define USB_DRIVER_EXT_FIELDS                                                 \
+   USBHIDDriver hid
++#endif
+ 
+ /*===========================================================================*/
+ /* Driver macros.                                                            */
+Index: community/os/hal/src/hal_usb_hid.c
+===================================================================
+--- community/os/hal/src/hal_usb_hid.c	(revision 767)
++++ community/os/hal/src/hal_usb_hid.c	(working copy)
+@@ -221,10 +221,10 @@
+   uhdp->vmt = &vmt;
+   osalEventObjectInit(&uhdp->event);
+   uhdp->state = HID_STOP;
+-  ibqObjectInit(&uhdp->ibqueue, true, uhdp->ib,
++  ibqObjectInit(&uhdp->ibqueue, uhdp->ib,
+                 USB_HID_BUFFERS_SIZE, USB_HID_BUFFERS_NUMBER,
+                 ibnotify, uhdp);
+-  obqObjectInit(&uhdp->obqueue, true, uhdp->ob,
++  obqObjectInit(&uhdp->obqueue, uhdp->ob,
+                 USB_HID_BUFFERS_SIZE, USB_HID_BUFFERS_NUMBER,
+                 obnotify, uhdp);
+ }

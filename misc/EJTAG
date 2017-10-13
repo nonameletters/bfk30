@@ -1,0 +1,110 @@
+Для работы с EJTAG используем OpenOCD:
+Запуск собственно самого openocd:
+openocd -c "adapter_khz 100" -f interface/ftdi/olimex-arm-usb-ocd-h.cfg -f target/p5600-haps.cfg
+Общаться с ним можно через консоль или через дебаггер на портах 4444 и 3333 соответственно:
+	telnet localhost 4444
+и
+	gdb
+	> target remote localhost:3333
+
+Содержимое target/p5600-haps.cfg:
+---------------------------------------
+set _CHIPNAME p5600
+set _CPUID0 0x30400863
+set _CPUID1 0x30401863
+
+adapter_khz 100
+
+jtag newtap $_CHIPNAME cm   -expected-id 0x30402863 -irlen 5
+jtag newtap $_CHIPNAME cpu1 -expected-id $_CPUID1 -irlen 5
+jtag newtap $_CHIPNAME cpu0 -expected-id $_CPUID0 -irlen 5
+
+set _TARGETNAME_1 $_CHIPNAME.cpu0
+set _TARGETNAME_2 $_CHIPNAME.cpu1
+target create $_TARGETNAME_1 mips_m4k -endian little -chain-position $_TARGETNAME_1
+target create $_TARGETNAME_2 mips_m4k -endian little -chain-position $_TARGETNAME_2
+
+#define 2 targets working in smp
+target smp $_TARGETNAME_2 $_TARGETNAME_1
+---------------------------------------
+
+Команды, доступные в консоли можно посмотреть набрав "help".
+Большая часть комманд имеет смысл только если процессор(ы) остановлены.
+
+Посмотреть состояние процессоров:
+> targets
+    TargetName         Type       Endian TapName            State       
+--  ------------------ ---------- ------ ------------------ ------------
+ 0* p5600.cpu0         mips_m4k   little p5600.cpu0         running
+ 1  p5600.cpu1         mips_m4k   little p5600.cpu1         running
+"*" означает процессор, который будет общаться с EJTAG
+сменить можно вызвав targets с новым именем:
+> targets p5600.cpu1
+
+Остановить:
+
+> halt
+DCR 0x703db numinst 4 numdata 2
+target state: halted
+target halted in MIPS32 mode due to debug-request, pc: 0x801062c8
+DCR 0x703db numinst 4 numdata 2
+target state: halted
+target halted in MIPS32 mode due to debug-request, pc: 0xbfc00000
+
+Продолжить работу:
+> resume [address]
+      resume target execution from current PC or address
+
+На некоторые команды откликаются все процессоры SMP, поменять это можно так:
+mips_m4k smp_off
+          Stop smp handling
+mips_m4k smp_on
+          Restart smp handling
+
+По умолчанию, openocd постоянно опрашивает состояние процессора, можно поменять:
+poll ['on'|'off']
+      poll target state; or reconfigure background polling
+
+Чтение регистров GPR
+reg [(register_number|register_name) [(value|'force')]]
+      display (reread from target with "force") or set a register; with no
+      arguments, displays all registers and their values
+
+Чтение регистров CP0
+  mips32 cp0 regnum select [value]
+        display/modify cp0 register
+
+Доступ к памяти
+mdb ['phys'] address [count]
+      display memory bytes
+mdh ['phys'] address [count]
+      display memory half-words
+mdw ['phys'] address [count]
+      display memory words
+mwb ['phys'] address value [count]
+      write memory byte
+mwh ['phys'] address value [count]
+      write memory half-word
+mww ['phys'] address value [count]
+      write memory word
+
+Breakpoints/watchpoints:
+Если память программы не пишется, используем "hard"
+gdb_breakpoint_override ('hard'|'soft'|'disable')
+      Display or specify type of breakpoint to be used by gdb 'break'
+      commands. (command valid any time)
+rbp address
+      remove breakpoint
+rwp address
+      remove watchpoint
+wp [address length [('r'|'w'|'a') value [mask]]]
+      list (no params) or create watchpoints
+bp <address> [<asid>]<length> ['hw'|'hw_ctx']
+      list or set hardware or software breakpoint
+
+Загрузка-выгрузка:
+dump_image filename address size
+load_image filename address ['bin'|'ihex'|'elf'|'s19'] [min_address] [max_length]
+verify_image filename [offset [type]]
+
+

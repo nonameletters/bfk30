@@ -1,0 +1,67 @@
+diff -r ab5a4b56f5cf community/os/hal/include/hal_usb_hid.h
+--- a/community/os/hal/include/hal_usb_hid.h	Wed May 10 14:06:06 2017 +0300
++++ b/community/os/hal/include/hal_usb_hid.h	Wed May 10 14:09:28 2017 +0300
+@@ -534,8 +534,10 @@
+   _usb_hid_driver_data
+ };
+ 
++#ifndef USB_DRIVER_EXT_FIELDS
+ #define USB_DRIVER_EXT_FIELDS                                                 \
+   USBHIDDriver hid
++#endif
+ 
+ /*===========================================================================*/
+ /* Driver macros.                                                            */
+diff -r ab5a4b56f5cf community/os/hal/src/hal_usb_hid.c
+--- a/community/os/hal/src/hal_usb_hid.c	Wed May 10 14:06:06 2017 +0300
++++ b/community/os/hal/src/hal_usb_hid.c	Wed May 10 14:09:28 2017 +0300
+@@ -221,10 +221,10 @@
+   uhdp->vmt = &vmt;
+   osalEventObjectInit(&uhdp->event);
+   uhdp->state = HID_STOP;
+-  ibqObjectInit(&uhdp->ibqueue, true, uhdp->ib,
++  ibqObjectInit(&uhdp->ibqueue, uhdp->ib,
+                 USB_HID_BUFFERS_SIZE, USB_HID_BUFFERS_NUMBER,
+                 ibnotify, uhdp);
+-  obqObjectInit(&uhdp->obqueue, true, uhdp->ob,
++  obqObjectInit(&uhdp->obqueue, uhdp->ob,
+                 USB_HID_BUFFERS_SIZE, USB_HID_BUFFERS_NUMBER,
+                 obnotify, uhdp);
+ }
+diff -r ab5a4b56f5cf os/hal/ports/STM32/LLD/OTGv1/usb_lld.c
+--- a/os/hal/ports/STM32/LLD/OTGv1/usb_lld.c	Wed May 10 14:06:06 2017 +0300
++++ b/os/hal/ports/STM32/LLD/OTGv1/usb_lld.c	Wed May 10 14:09:28 2017 +0300
+@@ -40,8 +40,7 @@
+ 
+ #if STM32_OTG_STEPPING == 1
+ #if defined(BOARD_OTG_NOVBUSSENS)
+-#define GCCFG_INIT_VALUE        (GCCFG_NOVBUSSENS | GCCFG_VBUSASEN |        \
+-                                 GCCFG_VBUSBSEN | GCCFG_PWRDWN)
++#define GCCFG_INIT_VALUE        (GCCFG_NOVBUSSENS | GCCFG_PWRDWN)
+ #else
+ #define GCCFG_INIT_VALUE        (GCCFG_VBUSASEN | GCCFG_VBUSBSEN |          \
+                                  GCCFG_PWRDWN)
+diff -r ab5a4b56f5cf os/hal/ports/STM32/STM32F4xx/hal_lld.h
+--- a/os/hal/ports/STM32/STM32F4xx/hal_lld.h	Wed May 10 14:06:06 2017 +0300
++++ b/os/hal/ports/STM32/STM32F4xx/hal_lld.h	Wed May 10 14:09:28 2017 +0300
+@@ -95,16 +95,16 @@
+ #define PLATFORM_NAME           "STM32F411xE High Performance with DSP and FPU"
+ 
+ #elif defined(STM32F205xx)
+-#define PLATFORM_NAME           "STM32F405 High Performance"
++#define PLATFORM_NAME           "STM32F205 High Performance"
+ 
+ #elif defined(STM32F215xx)
+-#define PLATFORM_NAME           "STM32F415 High Performance"
++#define PLATFORM_NAME           "STM32F215 High Performance"
+ 
+ #elif defined(STM32F207xx)
+-#define PLATFORM_NAME           "STM32F407 High Performance"
++#define PLATFORM_NAME           "STM32F207 High Performance"
+ 
+ #elif defined(STM32F217xx)
+-#define PLATFORM_NAME           "STM32F417 High Performance"
++#define PLATFORM_NAME           "STM32F217 High Performance"
+ 
+ #else
+ #error "STM32F2xx/F4xx device not specified"

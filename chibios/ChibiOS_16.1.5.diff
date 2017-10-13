@@ -1,0 +1,142 @@
+diff -r 27f0c42b42be community/os/hal/include/hal_usb_hid.h
+--- a/community/os/hal/include/hal_usb_hid.h	Tue Jul 26 20:46:04 2016 +0300
++++ b/community/os/hal/include/hal_usb_hid.h	Sun Sep 04 20:29:03 2016 +0300
+@@ -473,8 +473,6 @@
+   _usb_hid_driver_data
+ };
+ 
+-#define USB_DRIVER_EXT_FIELDS                                                 \
+-  USBHIDDriver hid
+ 
+ /*===========================================================================*/
+ /* Driver macros.                                                            */
+diff -r 27f0c42b42be community/os/hal/src/hal_usb_hid.c
+--- a/community/os/hal/src/hal_usb_hid.c	Tue Jul 26 20:46:04 2016 +0300
++++ b/community/os/hal/src/hal_usb_hid.c	Sun Sep 04 20:29:03 2016 +0300
+@@ -161,7 +161,7 @@
+     if (buf != NULL) {
+       /* Buffer found, starting a new transaction.*/
+       usbStartReceiveI(uhdp->config->usbp, uhdp->config->int_out,
+-                       buf, SERIAL_USB_BUFFERS_SIZE);
++                       buf, USB_HID_BUFFERS_SIZE);
+     }
+   }
+ }
+diff -r 27f0c42b42be os/common/ports/ARMCMx/compilers/GCC/ld/STM32F205xB.ld
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/os/common/ports/ARMCMx/compilers/GCC/ld/STM32F205xB.ld	Sun Sep 04 20:29:03 2016 +0300
+@@ -0,0 +1,53 @@
++/*
++    ChibiOS - Copyright (C) 2006..2015 Giovanni Di Sirio.
++
++    This file is part of ChibiOS.
++
++    ChibiOS is free software; you can redistribute it and/or modify
++    it under the terms of the GNU General Public License as published by
++    the Free Software Foundation; either version 3 of the License, or
++    (at your option) any later version.
++
++    ChibiOS is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program.  If not, see <http://www.gnu.org/licenses/>.
++*/
++
++/*
++ * ST32F205xB memory setup.
++ */
++MEMORY
++{
++    flash(rx) : org = 0x08000000, len = 128k
++    ram0(!rx) : org = 0x20000000, len = 64k     /* RAM1+RAM2 */
++    ram1  : org = 0x00000000, len = 0
++    ram2  : org = 0x00000000, len = 0
++    ram3  : org = 0x00000000, len = 0
++    ram4  : org = 0x00000000, len = 0
++    ram5  : org = 0x40024000, len = 4k      /* BCKP SRAM */
++    ram6  : org = 0x00000000, len = 0
++    ram7  : org = 0x00000000, len = 0
++}
++
++/* RAM region to be used for Main stack. This stack accommodates the processing
++   of all exceptions and interrupts*/
++REGION_ALIAS("MAIN_STACK_RAM", ram0);
++
++/* RAM region to be used for the process stack. This is the stack used by
++   the main() function.*/
++REGION_ALIAS("PROCESS_STACK_RAM", ram0);
++
++/* RAM region to be used for data segment.*/
++REGION_ALIAS("DATA_RAM", ram0);
++
++/* RAM region to be used for BSS segment.*/
++REGION_ALIAS("BSS_RAM", ram0);
++
++/* RAM region to be used for the default heap.*/
++REGION_ALIAS("HEAP_RAM", ram0);
++
++INCLUDE rules.ld
+diff -r 27f0c42b42be os/hal/ports/STM32/LLD/OTGv1/usb_lld.c
+--- a/os/hal/ports/STM32/LLD/OTGv1/usb_lld.c	Tue Jul 26 20:46:04 2016 +0300
++++ b/os/hal/ports/STM32/LLD/OTGv1/usb_lld.c	Sun Sep 04 20:29:03 2016 +0300
+@@ -42,10 +42,9 @@
+ #define GCCFG_INIT_VALUE        GCCFG_PWRDWN
+ #else
+ #if defined(BOARD_OTG_NOVBUSSENS)
+-#define GCCFG_INIT_VALUE        (GCCFG_NOVBUSSENS | GCCFG_VBUSASEN |        \
+-                                 GCCFG_VBUSBSEN | GCCFG_PWRDWN)
++#define GCCFG_INIT_VALUE        (GCCFG_NOVBUSSENS | GCCFG_PWRDWN)
+ #else
+-#define GCCFG_INIT_VALUE        (GCCFG_VBUSASEN | GCCFG_VBUSBSEN |          \
++#define GCCFG_INIT_VALUE        (GCCFG_VBUSASENS | GCCFG_VBUSBSEN |          \
+                                  GCCFG_PWRDWN)
+ #endif
+ #endif
+diff -r 27f0c42b42be os/hal/ports/STM32/STM32F4xx/ext_lld_isr.c
+--- a/os/hal/ports/STM32/STM32F4xx/ext_lld_isr.c	Tue Jul 26 20:46:04 2016 +0300
++++ b/os/hal/ports/STM32/STM32F4xx/ext_lld_isr.c	Sun Sep 04 20:29:03 2016 +0300
+@@ -362,7 +362,7 @@
+   nvicEnableVector(RTC_Alarm_IRQn, STM32_EXT_EXTI17_IRQ_PRIORITY);
+   nvicEnableVector(OTG_FS_WKUP_IRQn, STM32_EXT_EXTI18_IRQ_PRIORITY);
+ #if STM32_HAS_ETH
+-  nvicEnableVector(ETH_WKUP_IRQn, STM32_EXT_EXTI19_IRQ_PRIORITY);
++//  nvicEnableVector(ETH_WKUP_IRQn, STM32_EXT_EXTI19_IRQ_PRIORITY);
+ #endif
+ #if STM32_HAS_OTG2
+   nvicEnableVector(OTG_HS_WKUP_IRQn, STM32_EXT_EXTI20_IRQ_PRIORITY);
+@@ -391,7 +391,7 @@
+   nvicDisableVector(RTC_Alarm_IRQn);
+   nvicDisableVector(OTG_FS_WKUP_IRQn);
+ #if STM32_HAS_ETH
+-  nvicDisableVector(ETH_WKUP_IRQn);
++//  nvicDisableVector(ETH_WKUP_IRQn);
+ #endif
+ #if STM32_HAS_OTG2
+   nvicDisableVector(OTG_HS_WKUP_IRQn);
+diff -r 27f0c42b42be os/hal/ports/STM32/STM32F4xx/hal_lld.h
+--- a/os/hal/ports/STM32/STM32F4xx/hal_lld.h	Tue Jul 26 20:46:04 2016 +0300
++++ b/os/hal/ports/STM32/STM32F4xx/hal_lld.h	Sun Sep 04 20:29:03 2016 +0300
+@@ -95,16 +95,16 @@
+ #define PLATFORM_NAME           "STM32F411xE High Performance with DSP and FPU"
+ 
+ #elif defined(STM32F205xx)
+-#define PLATFORM_NAME           "STM32F405 High Performance"
++#define PLATFORM_NAME           "STM32F205 High Performance"
+ 
+ #elif defined(STM32F215xx)
+-#define PLATFORM_NAME           "STM32F415 High Performance"
++#define PLATFORM_NAME           "STM32F215 High Performance"
+ 
+ #elif defined(STM32F207xx)
+-#define PLATFORM_NAME           "STM32F407 High Performance"
++#define PLATFORM_NAME           "STM32F207 High Performance"
+ 
+ #elif defined(STM32F217xx)
+-#define PLATFORM_NAME           "STM32F417 High Performance"
++#define PLATFORM_NAME           "STM32F217 High Performance"
+ 
+ #else
+ #error "STM32F2xx/F4xx device not specified"

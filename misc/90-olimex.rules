@@ -1,0 +1,9 @@
+#Olimex
+##Scope: making JTAG port and RS232 serial port of Olimex ARM-USB-OCD-H device work on a GNU/Linux system.
+##Name and location of this file should be: /etc/udev/rules.d/45-ftdi2232-libftdi.rules
+##Olimex ARM-USB-OCD-H device is based on FT2232H. This is a Hi-Speed Dual USB UART/FIFO IC, that implements 2 serial/parallel ports on one USB-device.
+#
+
+SUBSYSTEM=="usb", ACTION=="add|change", ATTRS{idProduct}=="002b", ATTRS{idVendor}=="15ba", MODE="664", GROUP="plugdev", RUN+="/sbin/modprobe -q ftdi_sio product=0x002b vendor=0x15ba"
+
+

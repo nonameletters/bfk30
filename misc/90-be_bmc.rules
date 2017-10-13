@@ -1,0 +1,6 @@
+
+# HID device - monitor
+SUBSYSTEM=="usb|tty|hid|hidraw", ACTION=="add|change", ATTRS{idVendor}=="abf0", ATTRS{idProduct}=="1234", MODE="666", GROUP="plugdev"
+# DFU BMC programmer
+SUBSYSTEM=="usb", ACTION=="add|change", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="666", GROUP="plugdev"
+
