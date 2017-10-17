@@ -21,13 +21,13 @@
 #endif
 
 #if defined(BOARD_BE_BT_BFK20)
-#define BOARD_NAME              "BE-BT-BFK20"
-#define INA_SENSOR_COUNT		11
-#define TPS_CHANNEL_COUNT		3
+	#define BOARD_NAME              "BE-BT-BFK20"
+	#define INA_SENSOR_COUNT		11
+	#define TPS_CHANNEL_COUNT		3
 #elif defined(BOARD_BE_BT_BFK16)
-#define BOARD_NAME              "BE-BT-BFK16"
-#define INA_SENSOR_COUNT		3
-#define TPS_CHANNEL_COUNT		1
+	#define BOARD_NAME              "BE-BT-BFK16"
+	#define INA_SENSOR_COUNT		3
+	#define TPS_CHANNEL_COUNT		1
 #endif
 
 /*

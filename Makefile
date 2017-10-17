@@ -5,7 +5,7 @@
 # Author: Alexander Osipenko <Alexander.Osipenko@baikalelectronics.ru>
 #
 
-BE_BOARD=BE_BT1_BFK20
+BE_BOARD=BE_BT_BFK_30
 DEBUG=1
 
 # Compiler options here.
@@ -125,7 +125,6 @@ include $(call CHIBIOS_PORT_PATH,common/startup)/mk/startup_stm32f2xx.mk
 include $(CHIBIOS)/os/hal/hal.mk
 include $(CHIBIOS)/community/os/hal/hal.mk
 include $(CHIBIOS)/os/hal/ports/STM32/STM32F4xx/platform.mk
-#include $(CHIBIOS)/os/hal/boards/${BE_BOARD}/board.mk
 include boards/${BE_BOARD}/board.mk
 # RTOS files.
 include $(CHIBIOS)/os/hal/osal/rt/osal.mk
@@ -252,7 +251,7 @@ UDEFS += -DFIRMWARE_VERSION=\"$(PROJECT_version)\"
 UDEFS += -DBMC_WITH_SYSTEM_CONSOLE
 #UDEFS += -DBMC_WITH_PASSWORD
 UDEFS += -DBE_INTERNAL
-UDEFS += -DBOARD_BE_BT_BFK20
+
 # Define ASM defines here
 UADEFS =
 
