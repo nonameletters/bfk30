@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <stdio.h>
 
 #include "shell.h"
 #include "spi_flash.h"
@@ -30,13 +31,15 @@ typedef struct asciiTable
 	uint8_t decCharHex;
 } asciiTable_t;
 
+void createSensePrintThread(void);
+
 void cmd_power(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_rcg(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_cg(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_cgId(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_printCgValues(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_baikalReset(BaseSequentialStream *chp, int argc, char *argv[]);
-void cmd_prnPac(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_sense(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_idt(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_spi(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_flash(BaseSequentialStream *chp, int argc, char *argv[]);

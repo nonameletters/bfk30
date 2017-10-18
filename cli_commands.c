@@ -7,10 +7,10 @@
 #include "cli_commands.h"
 
 static uint16_t idtGenAddr = 0x00;
-static uint8_t pacAddr1  = 0;
-static uint8_t pacAddr2  = 0;
-static float   pacCh1Cur = 0;
 
+static virtual_timer_t printSenseThreadTimer;
+static thread_t* printSenseThreadPtr = NULL;
+static uint32_t showTime = 0;
 // For debug
 uint8_t dfuBuff[1024];
 
@@ -18,15 +18,15 @@ sFLASH_USBDriver SFDU1;
 
 const ShellCommand commands[] =
 {
-    {"power", cmd_power, "NO DESRIOPION"},
-	{"p",     cmd_prnPac, "NO DESRIOPION"},
+    {"power", cmd_power, "Enable/Disable board. power [on | off | cycle]"},
+	{"sense", cmd_sense, "Information from power sensors. sense [p]"},
 	{"idt",   cmd_idt, "NO DESRIOPION"},
 	{"cg",    cmd_cg, "NO DESRIOPION"},
 	{"rcg",   cmd_rcg, "NO DESRIOPION"},
 	{"pcg",   cmd_printCgValues, "NO DESRIOPION"},
-	{"spi",   cmd_spi, "NO DESRIOPION"},
+	{"spi",   cmd_spi, "Boot spi flash information. spi [id | r {bytes}]"},
 	{"f",     cmd_flash, "NO DESRIOPION"},
-	{"br",    cmd_baikalReset, "NO DESRIOPION"},
+	{"br",    cmd_baikalReset, "Baikal reset."},
 	{"rf",    cmd_readFlash, "NO DESRIOPION"},
 	{"bdfu",  cmd_bdfu, "NO DESRIOPION"},
 	{"pr",    cmd_pr, "NO DESRIOPION"},
@@ -95,6 +95,213 @@ int8_t asciiToHex(uint8_t ascii)
 
 	return res;
 }
+// ---------- ---------- ---------- ---------- ---------- ----------
+/*
+ *  Convert input buffer ID to Human readable format
+ */
+void spiIdToHumanRead(const char *inBuff, char* outBuff)
+{
+	if ((inBuff == NULL) || (outBuff == NULL))
+	{
+		return;
+	}
+
+	uint8_t len = 0;
+	char tmpStr[50];
+
+	strcpy(tmpStr, "Manufactor: ");
+	memcpy(outBuff + len, tmpStr, strlen(tmpStr));
+	len = len + strlen(tmpStr);
+
+	if (inBuff[0] == 0x20)
+	{
+		strcpy(tmpStr, "Micron\r\n");
+	}
+	else
+	{
+		strcpy(tmpStr, "Unknown\r\n");
+		memcpy(outBuff + len, tmpStr, strlen(tmpStr));
+		return;
+	}
+	memcpy(outBuff + len, tmpStr, strlen(tmpStr));
+	len = len + strlen(tmpStr);
+
+	strcpy(tmpStr, "Memory type: ");
+	memcpy(outBuff + len, tmpStr, strlen(tmpStr));
+	len = len + strlen(tmpStr);
+
+	strcpy(tmpStr, "BAh\r\n");
+	memcpy(outBuff + len, tmpStr, strlen(tmpStr));
+	len = len + strlen(tmpStr);
+
+	strcpy(tmpStr, "Memory capacity: ");
+	memcpy(outBuff + len, tmpStr, strlen(tmpStr));
+	len = len + strlen(tmpStr);
+	if (inBuff[2] == 0x18)
+	{
+		strcpy(tmpStr, "128Mbit\r\n");
+	}
+	else
+	{
+		strcpy(tmpStr, "Not Defined\r\n");
+	}
+	memcpy(outBuff + len, tmpStr, strlen(tmpStr));
+	len = len + strlen(tmpStr);
+
+//	sprintf(tmpStr, "Length of data follow: %x\r\n", inBuff[3]);
+//	memcpy(outBuff + len, tmpStr, strlen(tmpStr));
+//	len = len + strlen(tmpStr);
+
+}
+
+// ---------- ---------- ---------- ---------- ---------- ----------
+void printSpiFlashId(BaseSequentialStream *chp)
+{
+	char buff[256];
+	char buff1[256];
+	palSetPad(GPIOC, 15);
+	//uint8_t read = spi_read_status_register(&SFDU1);
+	//static int spi_rdid(sFLASH_USBDriver *flash, unsigned char *readarr, int bytes)
+	spi_rdid(&SFDU1, buff, 20);
+
+	spiIdToHumanRead(buff, buff1);
+	chprintf(chp, "%s", buff1);
+
+	chprintf(chp, "Length of data to follow: ");
+	chprintf(chp, "0x%xH\r\n", buff[3]);
+
+	chprintf(chp, "Extended device ID: ");
+	chprintf(chp, "%x %x\r\n", buff[4], buff[5]);
+
+	chprintf(chp, "Unique ID code: ");
+	for(uint8_t i = 6; i < 17; i++)
+	{
+		chprintf(chp, "%x ", buff[i]);
+	}
+
+	chprintf(chp, "\r\n");
+	// chprintf(chp, "%d.\r\n", read);
+	palClearPad(GPIOC, 15);
+}
+
+// ---------- ---------- ---------- ---------- ---------- ----------
+void printFirstBytes(BaseSequentialStream *chp, uint32_t count)
+{
+	uint8_t buff;
+	uint32_t sourceAdr = 0x00000000;
+
+	palSetPad(GPIOC, 15); // Enable multiplexor
+
+
+	uint8_t colCount = 0;
+	for (uint32_t i = 1; i <= count; i++)
+	{
+		sFLASH_ReadBuffer(&SFDU1, &buff, sourceAdr, 1);
+		sourceAdr++;
+
+		if ((i % 4) == 0)
+		{
+			chprintf(chp, "%02x\t", buff);
+			colCount++;
+		}
+		else
+		{
+			chprintf(chp, "%02x", buff);
+		}
+
+		if (colCount >= 4)
+		{
+			chprintf(chp, "\r\n");
+			colCount = 0;
+		}
+
+	}
+
+	chprintf(chp, "\r\n");
+	palClearPad(GPIOC, 15); // Disable multiplexor
+}
+
+// ---------- ---------- ---------- ---------- ---------- ----------
+void printSenseValues(BaseSequentialStream *chp)
+{
+	setVSenceSamplingRegister(&I2CD1, DEV_ADR_0V95_3V3_DA1, 0x5F);
+	setVSenceSamplingRegister(&I2CD1, DEV_ADR_1V50_1V8_DA2, 0x5F);
+
+	chThdSleepMilliseconds(100);
+
+	float pac1Ch1Vol = readVoltageValue(&I2CD1, DEV_ADR_0V95_3V3_DA1, CHANNEL1);
+	float pac1Ch2Vol = readVoltageValue(&I2CD1, DEV_ADR_0V95_3V3_DA1, CHANNEL2);
+	float pac2Ch1Vol = readVoltageValue(&I2CD1, DEV_ADR_1V50_1V8_DA2, CHANNEL1);
+	float pac2Ch2Vol = readVoltageValue(&I2CD1, DEV_ADR_1V50_1V8_DA2, CHANNEL2);
+
+	float pac1Ch1Cur = (pac1Ch1Vol > 0.8) ? readCurrentValue(&I2CD1, DEV_ADR_0V95_3V3_DA1, CHANNEL1, 2)  : 0;
+	float pac1Ch2Cur = (pac1Ch2Vol > 0.8) ? readCurrentValue(&I2CD1, DEV_ADR_0V95_3V3_DA1, CHANNEL2, 10) : 0;
+	float pac2Ch1Cur = (pac2Ch1Vol > 0.8) ? readCurrentValue(&I2CD1, DEV_ADR_1V50_1V8_DA2, CHANNEL1, 10) : 0;
+	float pac2Ch2Cur = (pac2Ch2Vol > 0.8) ? readCurrentValue(&I2CD1, DEV_ADR_1V50_1V8_DA2, CHANNEL2, 10) : 0;
+
+	chprintf(chp, "\33[32m");
+	chprintf(chp, "\r");
+	chprintf(chp, "Domain\t -=Voltage=-\t -=Current=-\t -=Power=-\r\n");
+	chprintf(chp, "\33[37m");
+
+	chprintf(chp, "0.95\t %8.4f\t %8.4f\t %8.4f\r\n", pac1Ch1Vol, pac1Ch1Cur, pac1Ch1Cur * pac1Ch1Vol);
+	chprintf(chp, "1.50\t %8.4f\t %8.4f\t %8.4f\r\n", pac2Ch1Vol, pac2Ch1Cur, pac2Ch1Cur * pac2Ch1Vol);
+	chprintf(chp, "1.80\t %8.4f\t %8.4f\t %8.4f\r\n", pac2Ch2Vol, pac2Ch2Cur, pac2Ch2Cur * pac2Ch2Vol);
+	chprintf(chp, "3.30\t %8.4f\t %8.4f\t %8.4f\r\n", pac1Ch2Vol, pac1Ch2Cur, pac1Ch2Cur * pac1Ch2Vol);
+
+	if (showTime != 0)
+	{
+		chprintf(chp, "\r\33[5A");
+	}
+
+}
+
+// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+static void timerHook(void *arg)
+{
+	(void) arg;
+}
+
+// ---------- ---------- ---------- ---------- ---------- ----------
+static THD_WORKING_AREA(waSensePrintThread, 256);
+static __attribute__((noreturn)) THD_FUNCTION(SensePrintThread, arg)
+{
+    (void)arg;
+
+    chRegSetThreadName("SensePrintThread");
+
+	chSysLock();
+		chSchGoSleepS(CH_STATE_SUSPENDED);
+	chSysUnlock();
+
+    while (true)
+    {
+
+		if (!chVTIsArmed(&printSenseThreadTimer)) // first press
+		{
+			chVTReset(&printSenseThreadTimer);
+			chVTSet(&printSenseThreadTimer, MS2ST(showTime), timerHook, NULL);
+
+		}
+
+		chprintf(sdu_stdio, "\r\n");
+		while(chVTIsArmed(&printSenseThreadTimer))
+		{
+			printSenseValues(sdu_stdio);
+		}
+
+		chprintf(sdu_stdio, "\r\n\n\n\n\nbmc>");
+		showTime = 0;
+		chSysLock();
+			chSchGoSleepS(CH_STATE_SUSPENDED);
+		chSysUnlock();
+    }
+}
+// ---------- ---------- ---------- ---------- ---------- ----------
+void createSensePrintThread(void)
+{
+	printSenseThreadPtr = chThdCreateStatic(waSensePrintThread, sizeof(waSensePrintThread), NORMALPRIO, SensePrintThread, NULL);
+}
 
 // ---------- ---------- ---------- ---------- ---------- ----------
 void cmd_power(BaseSequentialStream *chp, int argc, char *argv[])
@@ -112,7 +319,13 @@ void cmd_power(BaseSequentialStream *chp, int argc, char *argv[])
     }
     else if (strcmp(argv[0], "off") == 0)
     {
-    	//powerOff();
+    	powerOff();
+    }
+    else if (strcmp(argv[0], "cycle") == 0)
+    {
+    	powerOff();
+    	chThdSleepMilliseconds(1000);
+    	powerOn();
     }
 
 }
@@ -331,31 +544,47 @@ void cmd_baikalReset(BaseSequentialStream *chp, int argc, char *argv[])
 }
 
 // ---------- ---------- ---------- ---------- ---------- ----------
-void cmd_prnPac(BaseSequentialStream *chp, int argc, char *argv[])
+void cmd_sense(BaseSequentialStream *chp, int argc, char *argv[])
 {
-	chprintf(chp, "Pac addr.\r\n");
 	(void) argc;
 	(void) argv;
 
-	chprintf(chp, "PacID1 %d.\r\n", pacAddr1);
-	chprintf(chp, "PacID2 %d.\r\n", pacAddr2);
+	if (argc == 0)
+	{
+		printSenseValues(chp);
+		return;
+	}
 
+	if (argc > 0)
+	{
+		showTime = atoi(argv[0]) * 1000;
+		if (showTime == 0)
+		{
+			printSenseValues(chp);
+			return;
+		}
+		chSysLock();
+			chSchWakeupS(printSenseThreadPtr, (msg_t) 1);
+		chSysUnlock();
+	}
 
+	/*
 	setVSenceSamplingRegister(&I2CD1, DEV_ADR_0V95_3V3_DA1, 0x5F);
 	setVSenceSamplingRegister(&I2CD1, DEV_ADR_1V50_1V8_DA2, 0x5F);
 
 	chThdSleepMilliseconds(100);
 
-	pacCh1Cur = readCurrentValue(&I2CD1, DEV_ADR_0V95_3V3_DA1, CHANNEL1, 16);
-	float pac1Ch1Cur = readCurrentValue(&I2CD1, DEV_ADR_0V95_3V3_DA1, CHANNEL1, 2);
-	float pac1Ch2Cur = readCurrentValue(&I2CD1, DEV_ADR_0V95_3V3_DA1, CHANNEL2, 10);
-	float pac2Ch1Cur = readCurrentValue(&I2CD1, DEV_ADR_1V50_1V8_DA2, CHANNEL1, 10);
-	float pac2Ch2Cur = readCurrentValue(&I2CD1, DEV_ADR_1V50_1V8_DA2, CHANNEL2, 10);
+	//pacCh1Cur = readCurrentValue(&I2CD1, DEV_ADR_0V95_3V3_DA1, CHANNEL1, 16);
 
 	float pac1Ch1Vol = readVoltageValue(&I2CD1, DEV_ADR_0V95_3V3_DA1, CHANNEL1);
 	float pac1Ch2Vol = readVoltageValue(&I2CD1, DEV_ADR_0V95_3V3_DA1, CHANNEL2);
 	float pac2Ch1Vol = readVoltageValue(&I2CD1, DEV_ADR_1V50_1V8_DA2, CHANNEL1);
 	float pac2Ch2Vol = readVoltageValue(&I2CD1, DEV_ADR_1V50_1V8_DA2, CHANNEL2);
+
+	float pac1Ch1Cur = (pac1Ch1Vol > 0.8) ? readCurrentValue(&I2CD1, DEV_ADR_0V95_3V3_DA1, CHANNEL1, 2)  : 0;
+	float pac1Ch2Cur = (pac1Ch2Vol > 0.8) ? readCurrentValue(&I2CD1, DEV_ADR_0V95_3V3_DA1, CHANNEL2, 10) : 0;
+	float pac2Ch1Cur = (pac2Ch1Vol > 0.8) ? readCurrentValue(&I2CD1, DEV_ADR_1V50_1V8_DA2, CHANNEL1, 10) : 0;
+	float pac2Ch2Cur = (pac2Ch2Vol > 0.8) ? readCurrentValue(&I2CD1, DEV_ADR_1V50_1V8_DA2, CHANNEL2, 10) : 0;
 
 //  Read power values from sensors
 //	float pac1Ch1Pow = readPowerValue(&I2CD1, DEV_ADR_0V95_3V3_DA1, CHANNEL1, 2);
@@ -363,18 +592,28 @@ void cmd_prnPac(BaseSequentialStream *chp, int argc, char *argv[])
 //	float pac2Ch1Pow = readPowerValue(&I2CD1, DEV_ADR_1V50_1V8_DA2, CHANNEL1, 10);
 //	float pac2Ch2Pow = readPowerValue(&I2CD1, DEV_ADR_1V50_1V8_DA2, CHANNEL2, 10);
 
+	chprintf(chp, "\33[32m");
 	chprintf(chp, "Domain\t -=Voltage=-\t -=Current=-\t -=Power=-\r\n");
+	chprintf(chp, "\33[37m");
 
+	for (uint32_t i = 0; i <=10000; i++)
+	{
 	chprintf(chp, "0.95\t %8.4f\t %8.4f\t %8.4f\r\n", pac1Ch1Vol, pac1Ch1Cur, pac1Ch1Cur * pac1Ch1Vol);
 	chprintf(chp, "1.50\t %8.4f\t %8.4f\t %8.4f\r\n", pac2Ch1Vol, pac2Ch1Cur, pac2Ch1Cur * pac2Ch1Vol);
 	chprintf(chp, "1.80\t %8.4f\t %8.4f\t %8.4f\r\n", pac2Ch2Vol, pac2Ch2Cur, pac2Ch2Cur * pac2Ch2Vol);
 	chprintf(chp, "3.30\t %8.4f\t %8.4f\t %8.4f\r\n", pac1Ch2Vol, pac1Ch2Cur, pac1Ch2Cur * pac1Ch2Vol);
+	chprintf(chp, "%d\r\n", i);
+	chprintf(chp, "\r\33[5A");
+	}
 
+	chprintf(chp, "\32\101\130");
 //  Print power values from sensors
 //	chprintf(chp, "0.95\t %8.4f\t %8.4f\t %8.4f\r\n", pac1Ch1Vol, pac1Ch1Cur, pac1Ch1Pow);
 //	chprintf(chp, "1.50\t %8.4f\t %8.4f\t %8.4f\r\n", pac2Ch1Vol, pac2Ch1Cur, pac2Ch1Pow);
 //	chprintf(chp, "1.80\t %8.4f\t %8.4f\t %8.4f\r\n", pac2Ch2Vol, pac2Ch2Cur, pac2Ch2Pow);
 //	chprintf(chp, "3.30\t %8.4f\t %8.4f\t %8.4f\r\n", pac1Ch2Vol, pac1Ch2Cur, pac1Ch2Pow);
+ *
+ */
 }
 
 // ---------- ---------- ---------- ---------- ---------- ----------
@@ -391,22 +630,36 @@ void cmd_idt(BaseSequentialStream *chp, int argc, char *argv[])
 // ---------- ---------- ---------- ---------- ---------- ----------
 void cmd_spi(BaseSequentialStream *chp, int argc, char *argv[])
 {
-	chprintf(chp, "Spi ID.\r\n");
 	(void) argc;
 	(void) argv;
 
-	uint8_t buff[256];
-	palSetPad(GPIOC, 15);
-	//uint8_t read = spi_read_status_register(&SFDU1);
-	//static int spi_rdid(sFLASH_USBDriver *flash, unsigned char *readarr, int bytes)
-	spi_rdid(&SFDU1, buff, 20);
-
-	for(uint8_t i = 0; i < 20; ++i)
+	if (argc == 0)
 	{
-		chprintf(chp, "%x\r\n", buff[i]);
+		chprintf(chp, "Bad parameters need r|id\r\n");
+		return;
 	}
-	// chprintf(chp, "%d.\r\n", read);
-	palClearPad(GPIOC, 15);
+
+    if(strcmp(argv[0], "id") == 0)
+    {
+    	printSpiFlashId(chp);
+    }
+    else if (strcmp(argv[0], "r") == 0)
+    {
+    	if (atoi(argv[1]) > 0)
+    	{
+    		printFirstBytes(chp, atoi(argv[1]));
+    	}
+    	else
+    	{
+    		chprintf(chp, "Print first 100 bytes\r\n");
+    		printFirstBytes(chp, 100);
+    	}
+
+    }
+    else
+    {
+    	chprintf(chp, "Bad parameter.\r\n");
+    }
 }
 
 // ---------- ---------- ---------- ---------- ---------- ----------

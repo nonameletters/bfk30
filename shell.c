@@ -133,7 +133,7 @@ static void cmd_info(BaseSequentialStream *chp, int argc, char *argv[]) {
  * @brief   Array of the default commands.
  */
 static const ShellCommand const local_commands[] = {
-  {"info", cmd_info},
+  {"info", cmd_info, "Prints information about board."},
 //  {"systime", cmd_systime},
   {NULL, NULL}
 };
