@@ -20,20 +20,21 @@ const ShellCommand commands[] =
 {
     {"power", cmd_power, "Enable/Disable board. power [on | off | cycle]"},
 	{"sense", cmd_sense, "Information from power sensors. sense [p]"},
-	{"idt",   cmd_idt, "NO DESRIOPION"},
-	{"cg",    cmd_cg, "NO DESRIOPION"},
-	{"rcg",   cmd_rcg, "NO DESRIOPION"},
-	{"pcg",   cmd_printCgValues, "NO DESRIOPION"},
+	{"idt",   cmd_idt, "Enable/Disable clock generator."},
+	{"cg",    cmd_cgInfo, "Print Clock generator information. cg [stat|r]"},
+	{"rcg",   cmd_rcg, "Read and print Clock generator registers."},
+	{"pcg",   cmd_printCgValues, "Prints Clock generator values if they are written on STM. "},
 	{"spi",   cmd_spi, "Boot spi flash information. spi [id | r {bytes}]"},
-	{"f",     cmd_flash, "NO DESRIOPION"},
 	{"br",    cmd_baikalReset, "Baikal reset."},
-	{"rf",    cmd_readFlash, "NO DESRIOPION"},
-	{"bdfu",  cmd_bdfu, "NO DESRIOPION"},
-	{"pr",    cmd_pr, "NO DESRIOPION"},
-	{"cgid",  cmd_cgId, "NO DESRIOPION"},
+	{"pr",    cmd_pr, "Toggles PCI reset pin."},
+	{"btcfg", cmd_bootCfg, "Changes boot source. btcfg [brom | flash]"},
     {NULL, NULL, NULL}
 };
 
+// This functions were used, but not now
+// {"f",     cmd_flash, "NO DESRIOPION"},
+// {"bdfu",  cmd_bdfu, "NO DESRIOPION"},
+// {"cgid",  cmd_cgId, "NO DESRIOPION"},
 static asciiTable_t table[] = {
 		{0x20, 0x20}, \
 		{0x30, 0x00}, \
@@ -341,19 +342,31 @@ void cmd_rcg(BaseSequentialStream *chp, int argc, char *argv[])
 	uint8_t cur = 0;
 	uint8_t defConfSize = CG_REGISTER_NUM;
 
+	idtGenAddr = getIdtAddr();
+	if (idtGenAddr == 0)
+	{
+		chprintf(chp, "Clock Generator not responding.\r\n");
+		return;
+	}
+
+	chprintf(chp, "\33[32m");
+	chprintf(chp, "\r");
 	chprintf(chp, "// ---------- ---------- ---------- ---------- ---------- ----------\r\n");
+	chprintf(chp, "Device address: 0x%x\r\n", idtGenAddr << 1);
+	chprintf(chp, "-=Num=-\t -=Reg Num=-\t -=Cur Value=-\t -=Default Value=-\t\r\n");
+	chprintf(chp, "\33[37m");
 	uint8_t checkResult = 0;
 	uint8_t readedValue1 = 0;
 	uint8_t readedValue2 = 0;
 
-	idtGenAddr = getIdtAddr();
+
 	for (cur = 0; cur < defConfSize; ++cur)
 	{
 
 		readedValue1 = readByteBlock(&I2CD2, idtGenAddr, MAIN_CG_CONF[cur].regNum);
 		readedValue2 = MAIN_CG_CONF[cur].regVal;
-		chprintf(chp, "%d %x default: %x\r\n", cur, readedValue1, readedValue2);
-		chprintf(chp, "%d dev adr: %x\r\n", cur, idtGenAddr);
+		chprintf(chp, "%5.0d\t 0x%7x\t", cur, MAIN_CG_CONF[cur].regNum);
+		chprintf(chp, "0x%7x\t 0x%7x\r\n", readedValue1, readedValue2);
 		if (readedValue1 != readedValue2)
 		{
 			checkResult++;
@@ -483,6 +496,62 @@ void cmd_cg(BaseSequentialStream *chp, int argc, char *argv[])
 //	writeByteBlock(&I2CD2, CG_DEFAULT_ADR, REG_VCO_BAND_AND_FACTORY_RESERVED, vco_band);
 //
 //	otpProrCfg0(chp);
+}
+
+// ---------- ---------- ---------- ---------- ---------- ----------
+void cmd_cgInfo(BaseSequentialStream *chp, int argc, char *argv[])
+{
+	(void) argc;
+	(void) argv;
+
+	if (argc == 0)
+	{
+		chprintf(chp, "Bad parameters. cg [stat | r]\r\n");
+		return;
+	}
+
+	if (strcmp(argv[0], "stat") == 0)
+	{
+		idtGenAddr = getIdtAddr();
+		chprintf(chp, "Clock generator ID: 0x%x\r\n", (idtGenAddr << 1));
+
+		float fb = getFeedBackDivider();
+		chprintf(chp, "FeedBack divider %5.2f\r\n", fb);
+
+		float VCOFreq = 0;
+		VCOFreq = 25 * fb;
+		chprintf(chp, "VCO freq %5.2f\r\n", VCOFreq);
+
+		float t = getFodOut(1);
+		uint32_t tmpInt = (uint32_t) (VCOFreq / (t*2));
+		float of = (tmpInt == 100)  ? 100 : VCOFreq / (t*2);
+		chprintf(chp, "Fod 1 divider: %5.3f \tChannel 1 out frequency: %5.3f\r\n", t, of);
+
+		t = getFodOut(2);
+		tmpInt = (uint32_t) (VCOFreq / (t*2));
+		of = (tmpInt == 156)  ? 156.25 : VCOFreq / (t*2);
+		chprintf(chp, "Fod 2 divider: %5.3f \tChannel 2 out frequency: %5.3f\r\n", t, of);
+
+
+		t = getFodOut(3);
+		tmpInt = (uint32_t) (VCOFreq / (t*2));
+		of = (tmpInt == 100)  ? 100 : VCOFreq / (t*2);
+		chprintf(chp, "Fod 3 divider: %5.3f \tChannel 3 out frequency: %5.3f\r\n", t, of);
+
+		t = getFodOut(4);
+		tmpInt = (uint32_t) (VCOFreq / (t*2));
+		of = (tmpInt == 100)  ? 100 : VCOFreq / (t*2);
+		chprintf(chp, "Fod 4 divider: %5.3f \tChannel 4 out frequency: %5.3f\r\n", t, of);
+	}
+	else if (strcmp(argv[0], "r") == 0)
+	{
+		cmd_rcg(chp, argc, argv);
+	}
+	else
+	{
+		chprintf(chp, "Bad parameters. cg [stat | r]");
+		return;
+	}
 }
 
 // ---------- ---------- ---------- ---------- ---------- ----------
@@ -704,34 +773,6 @@ void cmd_flash(BaseSequentialStream *chp, int argc, char *argv[])
 }
 
 // ---------- ---------- ---------- ---------- ---------- ----------
-void cmd_readFlash(BaseSequentialStream *chp, int argc, char *argv[])
-{
-	chprintf(chp, "Read flash.\r\n");
-	(void) argc;
-	(void) argv;
-
-	//uint8_t buff[10];
-	uint8_t byteVal;
-	//uint32_t sAdr = 0x08060000;
-
-	chprintf(chp, "// ---------- ---------- ---------- ---------- ---------- ----------\r\n");
-	palSetPad(GPIOC, 15);
-	//chprintf(chp, "Byte %x\r\n", buff[0]);
-	uint32_t dest = 0x00000000;
-	for (uint32_t i = 0; i < 100; ++i)
-	{
-		//buff[0] = *((uint32_t*) sAdr);
-		sFLASH_ReadBuffer(&SFDU1, &byteVal, dest, 1);
-		//chprintf(chp, "source: %x dest: %x \r\n", sAdr, dest);
-		chprintf(chp, "readVal: %x\r\n", byteVal);
-		//sAdr = sAdr + sizeof(uint32_t);
-		//dest = dest + sizeof(uint8_t);
-		dest++;
-	}
-	palClearPad(GPIOC, 15);
-}
-
-// ---------- ---------- ---------- ---------- ---------- ----------
 void cmd_bdfu(BaseSequentialStream *chp, int argc, char *argv[])
 {
 	chprintf(chp, "DFU hook enters:\r\n");
@@ -761,6 +802,35 @@ void cmd_pr(BaseSequentialStream *chp, int argc, char *argv[])
 	chprintf(chp, "PCI reset:\r\n");
 
 	palTogglePad(GPIOA, 1);
+}
+
+// ---------- ---------- ---------- ---------- ---------- ----------
+void cmd_bootCfg(BaseSequentialStream *chp, int argc, char *argv[])
+{
+	(void) argc;
+	(void) argv;
+	chprintf(chp, "Boot config brom | flash:\r\n");
+
+	if (argc == 0)
+	{
+		chprintf(chp, "Bad parameters. btcfg [brom | flash]\r\n");
+		return;
+	}
+
+	if (strcmp(argv[0], "brom") == 0)
+	{
+		palSetPad(GPIOB, 8);
+		chprintf(chp, "BROM mode\r\n");
+	}
+	else if (strcmp(argv[0], "flash") == 0)
+	{
+		palClearPad(GPIOB, 8);
+		chprintf(chp, "FLASH mode\r\n");
+	}
+	else
+	{
+		chprintf(chp, "Bad parameters. btcfg [brom | flash]\r\n");
+	}
 }
 
 // ---------- ---------- ---------- ---------- ---------- ----------

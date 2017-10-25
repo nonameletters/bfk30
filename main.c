@@ -1330,12 +1330,6 @@ int main(void)
 
 
 	i2cStart(&I2CD1, &i2cfg1);
-//	i2caddr_t addr = 0x5A;
-//	initDevice(&I2CD1, add);
- // pacAddr1 = getProductId(&I2CD1, DEV_ADR_0V95_3V3_DA1);
- // pacAddr2 = getProductId(&I2CD1, DEV_ADR_1V50_1V8_DA2);
-
-
 	i2cStart(&I2CD2, &i2cfg2);
 
 	if (cgIdtStatus == CG_STAT_ERASED)

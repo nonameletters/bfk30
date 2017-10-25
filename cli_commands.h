@@ -36,6 +36,7 @@ void createSensePrintThread(void);
 void cmd_power(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_rcg(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_cg(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_cgInfo(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_cgId(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_printCgValues(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_baikalReset(BaseSequentialStream *chp, int argc, char *argv[]);
@@ -46,6 +47,7 @@ void cmd_flash(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_readFlash(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_bdfu(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_pr(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_bootCfg(BaseSequentialStream *chp, int argc, char *argv[]);
 
 void otpProrCfg0(BaseSequentialStream *chp);
 

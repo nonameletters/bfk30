@@ -76,7 +76,7 @@ static void list_commands(BaseSequentialStream *chp, const ShellCommand *scp)
   while (scp->sc_name != NULL)
   {
     if( scp->sc_name[0] != '.' )
-    	chprintf(chp, " \r\ncommand: %s \t%s", scp->sc_name, scp->sc_desc);
+    	chprintf(chp, " \r\ncommand: \33[32m%s\33[37m \t%s", scp->sc_name, scp->sc_desc);
     scp++;
   }
 }

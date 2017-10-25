@@ -170,6 +170,7 @@
                                      PIN_OTYPE_OPENDRAIN(5)  | \
                                      PIN_OTYPE_OPENDRAIN(6)  | \
                                      PIN_OTYPE_OPENDRAIN(7)  | \
+									 PIN_OTYPE_PUSHPULL(8)  | \
                                      PIN_OTYPE_OPENDRAIN(10) | \
                                      PIN_OTYPE_OPENDRAIN(11) | \
                                      PIN_OTYPE_OPENDRAIN(12) | \
@@ -178,6 +179,7 @@
                                      PIN_OSPEED_2M(5)      |           \
                                      PIN_OSPEED_2M(6)      |           \
                                      PIN_OSPEED_2M(7)      |           \
+									 PIN_OSPEED_2M(8)      |           \
                                      PIN_OSPEED_2M(10)     |           \
                                      PIN_OSPEED_2M(11)     |           \
                                      PIN_OSPEED_2M(12)     |           \
