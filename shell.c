@@ -76,7 +76,7 @@ static void list_commands(BaseSequentialStream *chp, const ShellCommand *scp)
   while (scp->sc_name != NULL)
   {
     if( scp->sc_name[0] != '.' )
-    	chprintf(chp, " \r\ncommand: %s \t%s", scp->sc_name, scp->sc_desc);
+    	chprintf(chp, " \r\ncommand: \33[32m%s\33[37m \t%s", scp->sc_name, scp->sc_desc);
     scp++;
   }
 }
@@ -133,7 +133,7 @@ static void cmd_info(BaseSequentialStream *chp, int argc, char *argv[]) {
  * @brief   Array of the default commands.
  */
 static const ShellCommand const local_commands[] = {
-  {"info", cmd_info},
+  {"info", cmd_info, "Prints information about board."},
 //  {"systime", cmd_systime},
   {NULL, NULL}
 };

@@ -22,9 +22,9 @@ cgStruct defaultConf[] = { {REG_OTP_CONTROL,                   0xE1}, \
                            {REG_VCO_CR_AND_PRE_DEVIDER,        0x8C}, \
                            {REG_FEEDBACK_INTEGER_DEVIDER,      0x07}, \
                            {REG_FEEDBACK_INTEGER_DEVIDER_BIT,  0x00}, \
-                           {REG_FEEDBACK_FRACTIONAL_DEVIDER1,  0x00}, \
-                           {REG_FEEDBACK_FRACTIONAL_DEVIDER2,  0x00}, \
-                           {REG_FEEDBACK_FRACTIONAL_DEVIDER3,  0x00}, \
+                           {REG_FEEDBACK_FRACTIONAL_DEVIDER1,  0x66}, \
+                           {REG_FEEDBACK_FRACTIONAL_DEVIDER2,  0x66}, \
+                           {REG_FEEDBACK_FRACTIONAL_DEVIDER3,  0x66}, \
                            {REG_RC_CONTROL1,                   0xD0}, \
                            {REG_RC_CONTROL2,                   0x7A}, \
                                                                       \
@@ -532,4 +532,122 @@ uint16_t getIdtAddr(void)
 	}
 
 	return 0x00;
+}
+
+// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+double innerPow16(double exp)
+{
+	if (exp == 0)
+	{
+		return 1;
+	}
+
+	double res = 1;
+
+	for(uint8_t i = 1; i <= exp; i++)
+	{
+		res = res * 16;
+	}
+	return res;
+}
+
+// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+float getFeedBackDivider(void)
+{
+	float result = 0;
+
+	uint16_t idtAdr = getIdtAddr();
+
+	if (idtAdr == 0)
+	{
+		return 0;
+	}
+
+	uint8_t intPartHi = readByteBlock(&I2CD2, idtAdr, REG_FEEDBACK_INTEGER_DEVIDER);
+	uint8_t intPartLo = readByteBlock(&I2CD2, idtAdr, REG_FEEDBACK_INTEGER_DEVIDER_BIT);
+
+	uint16_t intDiv = 0;
+	intDiv |= intPartHi;
+	intDiv = intDiv << 8;
+	intDiv |= intPartLo;
+	intDiv = intDiv >> 4;
+
+	uint8_t frPrt[3];
+	frPrt[0] = readByteBlock(&I2CD2, idtAdr, REG_FEEDBACK_FRACTIONAL_DEVIDER1);
+	frPrt[1] = readByteBlock(&I2CD2, idtAdr, REG_FEEDBACK_FRACTIONAL_DEVIDER2);
+	frPrt[2] = readByteBlock(&I2CD2, idtAdr, REG_FEEDBACK_FRACTIONAL_DEVIDER3);
+
+	uint8_t frPrtByBytes[6] = {0, 0, 0, 0, 0, 0};
+
+	uint8_t mask = 0x0F;
+	frPrtByBytes[0] = frPrt[2] & mask;
+	frPrtByBytes[1] = (frPrt[2] >> 4) & mask;
+	frPrtByBytes[2] = frPrt[1] & mask;
+	frPrtByBytes[3] = (frPrt[1] >> 4) & mask;
+	frPrtByBytes[4] = frPrt[0] & mask;
+	frPrtByBytes[5] = (frPrt[0] >> 4) & mask;
+
+	long int fractDiv = 0;
+	for (uint8_t i = 0; i <= 5; i++)
+	{
+		fractDiv += frPrtByBytes[i] * innerPow16(i);
+	}
+
+	result = (float)fractDiv / (float)16777216;
+	result += intDiv;
+
+	return result;
+}
+
+// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+float getFodOut(uint8_t outNumber)
+{
+	float res = 0;
+
+	uint16_t idtAdr = getIdtAddr();
+
+	if (idtAdr == 0)
+	{
+		return 0;
+	}
+
+	uint16_t intPartBase = 0x2D;
+	uint16_t fracPartBase = 0x22;
+
+	uint16_t intPartAdr  = intPartBase  + (0x10 * (outNumber - 1));
+	uint16_t fracPartAdr = fracPartBase + (0x10 * (outNumber - 1));
+
+	uint8_t intPartHi = readByteBlock(&I2CD2, idtAdr, intPartAdr);
+	uint8_t intPartLo = readByteBlock(&I2CD2, idtAdr, intPartAdr + 0x01);
+	uint16_t intDiv = 0;
+	intDiv |= intPartHi;
+	intDiv = intDiv << 8;
+	intDiv |= intPartLo;
+	intDiv = intDiv >> 4;
+
+	uint8_t frPrt[4];
+	frPrt[0] = readByteBlock(&I2CD2, idtAdr, fracPartAdr);
+	frPrt[1] = readByteBlock(&I2CD2, idtAdr, fracPartAdr + 1);
+	frPrt[2] = readByteBlock(&I2CD2, idtAdr, fracPartAdr + 2);
+	frPrt[3] = readByteBlock(&I2CD2, idtAdr, fracPartAdr + 3);
+
+	uint32_t movedInt = 0;
+	movedInt = (movedInt | frPrt[0]) << 8;
+	movedInt = (movedInt | frPrt[1]) << 8;
+	movedInt = (movedInt | frPrt[2]) << 8;
+	movedInt = (movedInt | frPrt[3]);
+	movedInt = movedInt >> 2;
+
+	long int fractDiv = 0;
+	uint8_t bt = 0;
+	for (uint8_t i = 0; i <= 7; i++)
+	{
+		bt = (movedInt >> i * 4) & 0x0000000F;
+		fractDiv += bt * innerPow16(i);
+	}
+
+	res = (float)fractDiv / (float)16777216;
+	res += intDiv;
+
+	return res;
 }

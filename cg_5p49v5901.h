@@ -12,6 +12,7 @@
 #include <hal.h>
 
 #include <stdint.h>
+#include <math.h>
 
 #include "i2c_exf.h"
 
@@ -167,5 +168,8 @@ void idtOff(void);
 // ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
 uint16_t getIdtAddr(void);
 
+// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+float getFeedBackDivider(void);
+float getFodOut(uint8_t outNumber);
 
 #endif /* CG_5P49V5901_H_ */

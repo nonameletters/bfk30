@@ -619,6 +619,7 @@ uint8_t isFlashState(void)
 	}
 }
 
+// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
 static THD_WORKING_AREA(waBlinkerThread, 256);
 static __attribute__((noreturn)) THD_FUNCTION(BlinkerThread, arg)
 {
@@ -627,12 +628,6 @@ static __attribute__((noreturn)) THD_FUNCTION(BlinkerThread, arg)
     chRegSetThreadName("blinker");
     while (true)
     {
-//		const uint16_t *player = ((pwc_state < 0 ||
-//				(!palReadPad(SEQ_CNTRL_PORT,SEQ_CNTRL_PIN)&&!palReadPad(SYSTEM_OK_PORT,SYSTEM_OK_PIN))) ? led_fail
-//					: ((dfu_active|pwc_locked) ? led_prog :
-//						(pwc_state == 2 ? led_pon : (usbGetDriverStateI(serusbcfg1.usbp) != USB_ACTIVE ? led_idle : led_conn))));
-//		palSetPad(LED_PORT, LED_GREEN_PIN);
-
     	if  (isFlashState())
     	{
     		blState = BS_FLASH;
@@ -654,13 +649,6 @@ static __attribute__((noreturn)) THD_FUNCTION(BlinkerThread, arg)
     		default:
     			blinkIdle();
     	}
-
-//		while(*player)
-//		{
-//			chThdSleepMilliseconds(*player);
-//			palTogglePad(LED_PORT, LED_GREEN_PIN);
-//			player++;
-//		}
     }
 }
 
@@ -1342,12 +1330,6 @@ int main(void)
 
 
 	i2cStart(&I2CD1, &i2cfg1);
-//	i2caddr_t addr = 0x5A;
-//	initDevice(&I2CD1, add);
- // pacAddr1 = getProductId(&I2CD1, DEV_ADR_0V95_3V3_DA1);
- // pacAddr2 = getProductId(&I2CD1, DEV_ADR_1V50_1V8_DA2);
-
-
 	i2cStart(&I2CD2, &i2cfg2);
 
 	if (cgIdtStatus == CG_STAT_ERASED)
@@ -1358,8 +1340,7 @@ int main(void)
 
 
     chThdCreateStatic(waHidReportThread, sizeof(waHidReportThread), NORMALPRIO-1, HidReportThread, NULL);
-//
-//    chThdCreateStatic(waThread4, sizeof(waThread4), NORMALPRIO, Thread4, NULL);
+    createSensePrintThread();
 
 	while (true)
 	{
