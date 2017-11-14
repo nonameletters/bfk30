@@ -168,13 +168,13 @@ char con_str_buf[20]; // min 13
 /*
  * I2C1/I2C2 config.
  */
-static const I2CConfig i2cfg1 = {
+const I2CConfig i2cfg1 = {
         OPMODE_I2C, // OPMODE_I2C OPMODE_SMBUS_HOST
         100000,
         STD_DUTY_CYCLE
 };
 
-static const I2CConfig i2cfg2 = {
+const I2CConfig i2cfg2 = {
         OPMODE_I2C, // OPMODE_I2C OPMODE_SMBUS_HOST
         400000,
         FAST_DUTY_CYCLE_16_9

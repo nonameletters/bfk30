@@ -21,6 +21,7 @@
 #include "pac1720.h"
 #include "chprintf.h"
 #include "cg_5p49v5901.h"
+#include "ts_mcp9804.h"
 #include "sdu.h"
 
 #define RESET_HOLD_TIME_MS 500
@@ -48,6 +49,7 @@ void cmd_readFlash(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_bdfu(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_pr(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_bootCfg(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_tmpSense(BaseSequentialStream *chp, int argc, char *argv[]);
 
 void otpProrCfg0(BaseSequentialStream *chp);
 

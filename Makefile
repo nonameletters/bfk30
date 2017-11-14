@@ -155,12 +155,14 @@ EXTI_EX_SRC      = exti_ex.c
 I2C_EXF_SRC      = i2c_exf.c
 CLICMD__SRC      = cli_commands.c
 CG_5P49V5901_SRC = cg_5p49v5901.c
+TS_MCP9804_SRC   = ts_mcp9804.c
 
 CSRC += $(BMC_SRC)
 CSRC += $(EXTI_EX_SRC)
 CSRC += $(I2C_EXF_SRC)
 CSRC += $(CLICMD__SRC)
 CSRC += $(CG_5P49V5901_SRC)
+CSRC += $(TS_MCP9804_SRC)
 
 #CSRC += $(TESTSRC)
 

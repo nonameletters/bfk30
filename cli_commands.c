@@ -28,6 +28,7 @@ const ShellCommand commands[] =
 	{"br",    cmd_baikalReset, "Baikal reset."},
 	{"pr",    cmd_pr, "Toggles PCI reset pin."},
 	{"btcfg", cmd_bootCfg, "Changes boot source. btcfg [brom | flash]"},
+	{"ts",    cmd_tmpSense, "Temperature Sensor"},
     {NULL, NULL, NULL}
 };
 
@@ -833,6 +834,24 @@ void cmd_bootCfg(BaseSequentialStream *chp, int argc, char *argv[])
 	}
 }
 
+// ---------- ---------- ---------- ---------- ---------- ----------
+void cmd_tmpSense(BaseSequentialStream *chp, int argc, char *argv[])
+{
+	(void) argc;
+	(void) argv;
+
+	uint16_t lTmp = getTSensorManufactorId();
+	chprintf(chp, "Manufacture ID:\t0x%X \n\r", lTmp);
+
+	lTmp = getTSensorDeviceId();
+	chprintf(chp, "Device ID: \t0x%X\n\r", lTmp);
+
+	lTmp = getTSensorRevisionId();
+	chprintf(chp, "Revision ID: \t0x%X\n\r", lTmp);
+
+	float lTemperature = getTSensorTemperature();
+	chprintf(chp, "Temperature: \t%.3f\n\r", lTemperature);
+}
 // ---------- ---------- ---------- ---------- ---------- ----------
 void otpProrCfg0(BaseSequentialStream *chp)
 {

@@ -167,6 +167,7 @@ bool dfuRequestsHook(USBDriver *usbp)
 					sFLASH_AQUIRE(SFDU);
 					dfup->read_address = 0;
 				}
+
 				wLength = ((uint16_t)usbp->setup[6] | ((uint16_t)usbp->setup[7] << 8));
 				if((SFDU->chip->total_size << 10) > (dfup->read_address))
 				{
@@ -181,6 +182,7 @@ bool dfuRequestsHook(USBDriver *usbp)
 					dfuSetError(dfup->status,DFU_ERROR_ADDRESS);
 					return false;
 				}
+
 				if((SFDU->chip->total_size << 10) == dfup->read_address)
 				{
 					dfup->status[DFU_STATUS_STATE] = DFU_STATE_IDLE;
