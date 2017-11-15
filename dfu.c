@@ -169,12 +169,14 @@ bool dfuRequestsHook(USBDriver *usbp)
 				}
 
 				wLength = ((uint16_t)usbp->setup[6] | ((uint16_t)usbp->setup[7] << 8));
-				if((SFDU->chip->total_size << 10) > (dfup->read_address))
+//				if((SFDU->chip->total_size << 10) > (dfup->read_address))
+				if((1024) > (dfup->read_address))
 				{
 					SFDU->chip->read(SFDU, dfup->flash_buffer, dfup->read_address, wLength);
 					dfup->read_address += wLength;
 					usbSetupTransfer(usbp, dfup->flash_buffer, wLength, NULL);
 					dfup->status[DFU_STATUS_STATE] = DFU_STATE_UPLOAD_IDLE;
+					break;
 				}
 				else
 				{
@@ -183,11 +185,16 @@ bool dfuRequestsHook(USBDriver *usbp)
 					return false;
 				}
 
-				if((SFDU->chip->total_size << 10) == dfup->read_address)
+//				if((SFDU->chip->total_size << 10) == dfup->read_address)
+				if((1024) <= dfup->read_address)
 				{
-					dfup->status[DFU_STATUS_STATE] = DFU_STATE_IDLE;
+					dfup->status[DFU_STATUS_STATE] = DFU_STATE_MANIFEST;
 					sFLASH_RELEASE(SFDU);
+					//buttonsPowerResetOn();
+					dfuSetTimeout(dfup->status,100);
+					sysDfuStop(usbp->alt_setting);
 					buttonsPowerResetOn();
+					//usbSetupTransfer(usbp, NULL, 0, NULL); // Need to send empty package to terminate upload
 				}
 				return true;
 			case DFU_GETSTATUS:

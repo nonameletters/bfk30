@@ -29,6 +29,7 @@ const ShellCommand commands[] =
 	{"pr",    cmd_pr, "Toggles PCI reset pin."},
 	{"btcfg", cmd_bootCfg, "Changes boot source. btcfg [brom | flash]"},
 	{"ts",    cmd_tmpSense, "Temperature Sensor"},
+	{"bdfu",  cmd_bdfu, "Print DFU call stack trace"},
     {NULL, NULL, NULL}
 };
 
