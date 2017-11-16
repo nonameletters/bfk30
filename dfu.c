@@ -17,8 +17,9 @@
 #include "dfu.h"
 
 // For debug
-extern uint8_t dfuBuff[1024];
+//extern uint8_t dfuBuff[1024];
 static uint32_t lCount = 0;
+static uint32_t eCount = 0;
 volatile static uint8_t lTr = 0;
 
 // For debug time work with SPI flash directly
@@ -104,7 +105,7 @@ bool dfuRequestsHook(USBDriver *usbp)
 		switch (usbp->setup[1])
 		{
 			case DFU_DNLOAD:
-				dfuBuff[lCount] = 1;
+//				dfuBuff[lCount] = 1;
 				if(!SFDU->chip)
 				{
 					buttonsPowerResetOn();
@@ -151,7 +152,7 @@ bool dfuRequestsHook(USBDriver *usbp)
 				}
 				return true;
 			case DFU_UPLOAD:
-				dfuBuff[lCount] = 2;
+//				dfuBuff[lCount] = 2;
 				if(!SFDU->chip)
 				{
 					buttonsPowerResetOn();
@@ -169,24 +170,32 @@ bool dfuRequestsHook(USBDriver *usbp)
 				}
 
 				wLength = ((uint16_t)usbp->setup[6] | ((uint16_t)usbp->setup[7] << 8));
-//				if((SFDU->chip->total_size << 10) > (dfup->read_address))
-				if((1024) > (dfup->read_address))
+				if((SFDU->chip->total_size << 10) > (dfup->read_address))
+//				if((1024) > (dfup->read_address))
 				{
 					SFDU->chip->read(SFDU, dfup->flash_buffer, dfup->read_address, wLength);
 					dfup->read_address += wLength;
 					usbSetupTransfer(usbp, dfup->flash_buffer, wLength, NULL);
 					dfup->status[DFU_STATUS_STATE] = DFU_STATE_UPLOAD_IDLE;
-					break;
+					//eCount++;
+					return true;
 				}
 				else
 				{
 					buttonsPowerResetOn();
-					dfuSetError(dfup->status,DFU_ERROR_ADDRESS);
+					dfup->status[DFU_STATUS_STATE] = DFU_STATE_MANIFEST;
+					// dfuSetError(dfup->status,DFU_ERROR_ADDRESS);
 					return false;
+					//return true;
 				}
 
-//				if((SFDU->chip->total_size << 10) == dfup->read_address)
-				if((1024) <= dfup->read_address)
+//				if (eCount == dfup->read_address)
+//				{
+//					eCount++;
+//				}
+
+				if((SFDU->chip->total_size << 10) == dfup->read_address)
+//				if((1024) <= dfup->read_address)
 				{
 					dfup->status[DFU_STATUS_STATE] = DFU_STATE_MANIFEST;
 					sFLASH_RELEASE(SFDU);
@@ -198,7 +207,7 @@ bool dfuRequestsHook(USBDriver *usbp)
 				}
 				return true;
 			case DFU_GETSTATUS:
-				dfuBuff[lCount] = 3;
+//				dfuBuff[lCount] = 3;
 				buttonsPowerResetOff();
 //				if (lCount == 148)
 //				{
@@ -245,11 +254,16 @@ bool dfuRequestsHook(USBDriver *usbp)
 							dfup->status[DFU_STATUS_STATE] = DFU_STATE_DNLOAD_IDLE;
 						}
 					}
+					else if((dfup->status[DFU_STATUS_STATE] == DFU_STATE_IDLE) && (dfup->status[DFU_STATUS_ERROR] == DFU_ERROR_NONE))
+					{
+						buttonsPowerResetOn();
+						sFLASH_RELEASE(SFDU);
+					}
 				}
 				usbSetupTransfer(usbp, dfup->status, 6, NULL);
 				return true;
 			case DFU_CLRSTATUS:
-				dfuBuff[lCount] = 4;
+//				dfuBuff[lCount] = 4;
 				buttonsPowerResetOff();
 				if(!sysDfuReady(usbp->alt_setting))
 				{
@@ -277,33 +291,31 @@ bool dfuRequestsHook(USBDriver *usbp)
 				dfup->writing = 0;
 				return true;
 			case DFU_GETSTATE:
-				dfuBuff[lCount] = 5;
+//				dfuBuff[lCount] = 5;
 				buttonsPowerResetOff();
 				usbSetupTransfer(usbp, dfup->status+DFU_STATUS_STATE, 1, NULL);
 				return true;
 			case DFU_ABORT:
-				dfuBuff[lCount] = 6;
+//				dfuBuff[lCount] = 6;
 				buttonsPowerResetOn();
 				dfup->status[DFU_STATUS_STATE] = DFU_STATE_IDLE;
 				dfup->status[DFU_STATUS_ERROR] = DFU_ERROR_NONE;
 				dfup->writing = 0;
 				sFLASH_RELEASE(SFDU);		//??
-				sysDfuStop(usbp->alt_setting);
 				return true;
 			case DFU_DETACH:
-				dfuBuff[lCount] = 7;
+//				dfuBuff[lCount] = 7;
 				buttonsPowerResetOn();
-				//buttonsPowerResetOff();
 				return true;
 		}
 	}
 	else if(((usbp->setup[0] & USB_RTYPE_RECIPIENT_MASK) == USB_RTYPE_RECIPIENT_INTERFACE) && (usbp->setup[1] == USB_REQ_SET_INTERFACE))
 	{
-		dfuBuff[lCount] = 8;
+//		dfuBuff[lCount] = 8;
 		wValue = ((uint16_t)usbp->setup[2] | ((uint16_t)usbp->setup[3] << 8));
 		if( (wValue < DFU_INTERFACES) )
 		{
-			dfuBuff[lCount] = 9;
+//			dfuBuff[lCount] = 9;
 			buttonsPowerResetOff();
 			usbp->alt_setting = wValue;
 			//usbSetupTransfer(usbp, NULL, 0, NULL);	// zlp
@@ -316,7 +328,7 @@ bool dfuRequestsHook(USBDriver *usbp)
 		}
 		else
 		{
-			dfuBuff[lCount] = 10;
+//			dfuBuff[lCount] = 10;
 			buttonsPowerResetOn();
 			// Error!
 			return false;

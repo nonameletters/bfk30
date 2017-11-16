@@ -12,7 +12,7 @@ static virtual_timer_t printSenseThreadTimer;
 static thread_t* printSenseThreadPtr = NULL;
 static uint32_t showTime = 0;
 // For debug
-uint8_t dfuBuff[1024];
+volatile uint8_t dfuBuff[1024];
 
 sFLASH_USBDriver SFDU1;
 
@@ -29,13 +29,12 @@ const ShellCommand commands[] =
 	{"pr",    cmd_pr, "Toggles PCI reset pin."},
 	{"btcfg", cmd_bootCfg, "Changes boot source. btcfg [brom | flash]"},
 	{"ts",    cmd_tmpSense, "Temperature Sensor"},
-	{"bdfu",  cmd_bdfu, "Print DFU call stack trace"},
     {NULL, NULL, NULL}
 };
 
 // This functions were used, but not now
 // {"f",     cmd_flash, "NO DESRIOPION"},
-// {"bdfu",  cmd_bdfu, "NO DESRIOPION"},
+// {"bdfu",  cmd_bdfu, "Print DFU call stack trace"},
 // {"cgid",  cmd_cgId, "NO DESRIOPION"},
 static asciiTable_t table[] = {
 		{0x20, 0x20}, \
