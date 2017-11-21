@@ -1248,9 +1248,9 @@ int main(void)
 
 //    palSetPad(GPIOC, 4); // 1V5
 //    palSetPad(GPIOC, 5); // 1V8
-//    palSetPad(GPIOC, 13); // 1V8
-//    palSetPad(GPIOC, 3); // 1V8
-//    palSetPad(GPIOD, 0); // 1V8
+//    palSetPad(GPIOC, 13); // 0V95
+//    palSetPad(GPIOC, 3); // EN_PLL
+//    palSetPad(GPIOD, 0); // EN_CLK_REF
 //
 //    palClearPad(GPIOC, 4); // 1V5
 //    palClearPad(GPIOC, 5); // 1V8

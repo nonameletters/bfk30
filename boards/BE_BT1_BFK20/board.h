@@ -163,25 +163,26 @@
                                      PIN_MODE_ALTERNATE(10)   | \
                                      PIN_MODE_ALTERNATE(11)   | \
                                      PIN_MODE_ALTERNATE(12)   | \
-                                     PIN_MODE_OUTPUT(13)   | \
-                                     PIN_MODE_OUTPUT(14)   | \
+                                     PIN_MODE_OUTPUT(13)      | \
+                                     PIN_MODE_OUTPUT(14)      | \
                                      PIN_MODE_OUTPUT(15))
-#define VAL_GPIOB_OTYPER            (PIN_OTYPE_PUSHPULL(1)   | \
-                                     PIN_OTYPE_OPENDRAIN(5)  | \
-                                     PIN_OTYPE_OPENDRAIN(6)  | \
-                                     PIN_OTYPE_OPENDRAIN(7)  | \
-                                     PIN_OTYPE_OPENDRAIN(10) | \
-                                     PIN_OTYPE_OPENDRAIN(11) | \
-                                     PIN_OTYPE_OPENDRAIN(12) | \
+#define VAL_GPIOB_OTYPER            (PIN_OTYPE_PUSHPULL(1)    | \
+                                     PIN_OTYPE_OPENDRAIN(5)   | \
+                                     PIN_OTYPE_OPENDRAIN(6)   | \
+                                     PIN_OTYPE_OPENDRAIN(7)   | \
+                                     PIN_OTYPE_OPENDRAIN(10)  | \
+                                     PIN_OTYPE_OPENDRAIN(11)  | \
+                                     PIN_OTYPE_OPENDRAIN(12)  | \
+									 PIN_OTYPE_PUSHPULL(13)   | \
                                      PIN_OTYPE_OPENDRAIN(15))
-#define VAL_GPIOB_OSPEEDR           (PIN_OSPEED_100M(1)    |           \
-                                     PIN_OSPEED_2M(5)      |           \
-                                     PIN_OSPEED_2M(6)      |           \
-                                     PIN_OSPEED_2M(7)      |           \
+#define VAL_GPIOB_OSPEEDR           (PIN_OSPEED_100M(1)       | \
+                                     PIN_OSPEED_2M(5)         | \
+                                     PIN_OSPEED_2M(6)         | \
+                                     PIN_OSPEED_2M(7)         | \
                                      PIN_OSPEED_2M(10)     |           \
                                      PIN_OSPEED_2M(11)     |           \
                                      PIN_OSPEED_2M(12)     |           \
-                                     PIN_OSPEED_2M(13)     |           \
+                                     PIN_OSPEED_100M(13)    |           \
                                      PIN_OSPEED_100M(14)   |           \
                                      PIN_OSPEED_2M(15))
 #define VAL_GPIOB_PUPDR             (0x00000000)

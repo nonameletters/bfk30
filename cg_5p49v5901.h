@@ -41,6 +41,7 @@ typedef enum CgStatus
 extern CgStatus_t cgIdtStatus;
 
 #define REG_OTP_CONTROL                   0x00
+#define REG_RAM0_DEVICE_ID                0x01
 #define REG_PRIMARY_SOURCE_SHUTDOWN       0x10
 #define REG_VCO_BAND_AND_FACTORY_RESERVED 0x11
 #define REG_CRYSTAL_X1_LOAD_CAPACITOR     0x12

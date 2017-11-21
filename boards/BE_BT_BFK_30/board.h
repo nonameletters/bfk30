@@ -148,7 +148,7 @@
  * PB10 - I2C2_SCL      (alternate 4).	// ext pullup
  * PB11 - I2C2_SDA      (alternate 4).	// ext pullup
  * PB12 - I2C2_SMBA     (alternate 4).	// ext pullup
- * PB13 - SPI2_CLK      (alternate 5).	- 1.6-NC  2.0: pin J9
+ * PB13 - EN_3V3_MEZ
  * PB14 - SPI2_MISO     (alternate 5).	- 1.6-NC  2.0: pin J8
  * PB15 - SPI2_MOSI     (alternate 5).	- 1.6-NC  2.0: EN_12V_SW (active 0, ext pullup)
  */
@@ -163,28 +163,29 @@
                                      PIN_MODE_ALTERNATE(10)   | \
                                      PIN_MODE_ALTERNATE(11)   | \
                                      PIN_MODE_ALTERNATE(12)   | \
-                                     PIN_MODE_OUTPUT(13)   | \
-                                     PIN_MODE_OUTPUT(14)   | \
+                                     PIN_MODE_OUTPUT(13)      | \
+                                     PIN_MODE_OUTPUT(14)      | \
                                      PIN_MODE_OUTPUT(15))
-#define VAL_GPIOB_OTYPER            (PIN_OTYPE_PUSHPULL(1)   | \
-                                     PIN_OTYPE_OPENDRAIN(5)  | \
-                                     PIN_OTYPE_OPENDRAIN(6)  | \
-                                     PIN_OTYPE_OPENDRAIN(7)  | \
-									 PIN_OTYPE_PUSHPULL(8)  | \
-                                     PIN_OTYPE_OPENDRAIN(10) | \
-                                     PIN_OTYPE_OPENDRAIN(11) | \
-                                     PIN_OTYPE_OPENDRAIN(12) | \
+#define VAL_GPIOB_OTYPER            (PIN_OTYPE_PUSHPULL(1)    | \
+                                     PIN_OTYPE_OPENDRAIN(5)   | \
+                                     PIN_OTYPE_OPENDRAIN(6)   | \
+                                     PIN_OTYPE_OPENDRAIN(7)   | \
+									 PIN_OTYPE_PUSHPULL(8)    | \
+                                     PIN_OTYPE_OPENDRAIN(10)  | \
+                                     PIN_OTYPE_OPENDRAIN(11)  | \
+                                     PIN_OTYPE_OPENDRAIN(12)  | \
+									 PIN_OTYPE_PUSHPULL(13)   | \
                                      PIN_OTYPE_OPENDRAIN(15))
-#define VAL_GPIOB_OSPEEDR           (PIN_OSPEED_100M(1)    |           \
-                                     PIN_OSPEED_2M(5)      |           \
-                                     PIN_OSPEED_2M(6)      |           \
-                                     PIN_OSPEED_2M(7)      |           \
-									 PIN_OSPEED_2M(8)      |           \
-                                     PIN_OSPEED_2M(10)     |           \
-                                     PIN_OSPEED_2M(11)     |           \
-                                     PIN_OSPEED_2M(12)     |           \
-                                     PIN_OSPEED_2M(13)     |           \
-                                     PIN_OSPEED_100M(14)   |           \
+#define VAL_GPIOB_OSPEEDR           (PIN_OSPEED_100M(1)       | \
+                                     PIN_OSPEED_2M(5)         | \
+                                     PIN_OSPEED_2M(6)         | \
+                                     PIN_OSPEED_2M(7)         | \
+									 PIN_OSPEED_2M(8)         | \
+                                     PIN_OSPEED_2M(10)        | \
+                                     PIN_OSPEED_2M(11)        | \
+                                     PIN_OSPEED_2M(12)        | \
+                                     PIN_OSPEED_100M(13)      | \
+                                     PIN_OSPEED_100M(14)      | \
                                      PIN_OSPEED_2M(15))
 #define VAL_GPIOB_PUPDR             (0x00000000)
 #define VAL_GPIOB_ODR               (0x00000000)
@@ -214,41 +215,43 @@
  * PC7  - ATX Power Good     (gpio input).
  * PC8	- EN_FUSE_PROG		 (gpio out 0) 2.0 1.6-NC
  * PC9	- I2C3_GP_SDA		 (alt 4 ext pullup)
- * PC10 - UART3_TX           (alternate 7).
- * PC11 - UART3_RX           (alternate 7).
+ * PC10 - PWRGD_VTT
+ * PC11 - PWRGD_0V95
  * PC12 - LED GREEN          (gpio output).
  * PC13 - PCIe SW prog       (gpio output). 1.6-NC
  * PC14 - LED RED            (gpio output). 1.6-NC
  * PC15 - Boot flash prog    (gpio output OD).		2.0 temp disable (input)
  */
 #define VAL_GPIOC_MODER             (PIN_MODE_OUTPUT(0)       | \
-									 PIN_MODE_OUTPUT(1)       |        \
-									 PIN_MODE_OUTPUT(2)       |        \
+									 PIN_MODE_OUTPUT(1)       | \
+									 PIN_MODE_OUTPUT(2)       | \
 									 PIN_MODE_OUTPUT(3)       | \
 									 PIN_MODE_OUTPUT(4)       | \
 									 PIN_MODE_OUTPUT(5)       | \
                                      PIN_MODE_OUTPUT(6)       | \
-                                     PIN_MODE_INPUT(7)        |        \
+                                     PIN_MODE_INPUT(7)        | \
                                      PIN_MODE_OUTPUT(8)       | \
                                      PIN_MODE_ALTERNATE(9)    | \
-                                     PIN_MODE_ALTERNATE(10)   | \
-                                     PIN_MODE_ALTERNATE(11)   | \
+                                     PIN_MODE_INPUT(10)       | \
+                                     PIN_MODE_INPUT(11)       | \
                                      PIN_MODE_OUTPUT(12)      | \
                                      PIN_MODE_OUTPUT(13)      | \
                                      PIN_MODE_OUTPUT(14)      | \
                                      PIN_MODE_OUTPUT(15))
-#define VAL_GPIOC_OTYPER            (PIN_OTYPE_OPENDRAIN(1)   |        \
-									 PIN_OTYPE_OPENDRAIN(2)   |        \
-									 PIN_OTYPE_PUSHPULL(3)   |        \
-									 PIN_OTYPE_PUSHPULL(6)   | \
-									 PIN_OTYPE_OPENDRAIN(9)  | \
-									PIN_OTYPE_PUSHPULL(15))
+#define VAL_GPIOC_OTYPER            (PIN_OTYPE_OPENDRAIN(1)   | \
+									 PIN_OTYPE_OPENDRAIN(2)   | \
+									 PIN_OTYPE_PUSHPULL(3)    | \
+									 PIN_OTYPE_PUSHPULL(6)    | \
+									 PIN_OTYPE_OPENDRAIN(9)   | \
+									 PIN_OTYPE_PUSHPULL(15))
 #define VAL_GPIOC_OSPEEDR           0x00000000
 #define VAL_GPIOC_PUPDR             (PIN_PUDR_PULLDOWN(3)     | \
 									 PIN_PUDR_FLOATING(5)     | \
-                                     PIN_PUDR_PULLUP(6)     | \
-                                     PIN_PUDR_PULLUP(7)        |          \
+                                     PIN_PUDR_PULLUP(6)       | \
+                                     PIN_PUDR_PULLUP(7)       | \
                                      PIN_PUDR_FLOATING(9)     | \
+									 PIN_PUDR_PULLUP(10)      | \
+									 PIN_PUDR_PULLUP(11)      | \
                                      PIN_PUDR_FLOATING(12)    | \
                                      PIN_PUDR_FLOATING(13)    | \
                                      PIN_PUDR_FLOATING(14)    | \
@@ -273,17 +276,17 @@
  * PD1  - OSC_OUT     (input floating).
  * PD2	- CPU_RESET#  (opendrain)
  */
-#define VAL_GPIOD_MODER             (PIN_MODE_OUTPUT(0) | \
-									 PIN_MODE_OUTPUT(2) | \
+#define VAL_GPIOD_MODER             (PIN_MODE_OUTPUT(0)       | \
+									 PIN_MODE_OUTPUT(2)       | \
 									 PIN_MODE_OUTPUT(3))
-#define VAL_GPIOD_OTYPER            (PIN_OTYPE_PUSHPULL(0) | \
-                                     PIN_OTYPE_PUSHPULL(2) | \
+#define VAL_GPIOD_OTYPER            (PIN_OTYPE_PUSHPULL(0)    | \
+                                     PIN_OTYPE_PUSHPULL(2)    | \
 									 PIN_OTYPE_PUSHPULL(3))
-#define VAL_GPIOD_OSPEEDR           (PIN_OSPEED_100M(2) | \
+#define VAL_GPIOD_OSPEEDR           (PIN_OSPEED_100M(2)       | \
 		                             PIN_OSPEED_100M(3))
-#define VAL_GPIOD_PUPDR             (PIN_PUDR_FLOATING(0)  | \
-                                     PIN_PUDR_FLOATING(1) | \
-                                     PIN_PUDR_PULLDOWN(2) | \
+#define VAL_GPIOD_PUPDR             (PIN_PUDR_FLOATING(0)     | \
+                                     PIN_PUDR_FLOATING(1)     | \
+                                     PIN_PUDR_PULLDOWN(2)     | \
 									 PIN_PUDR_PULLDOWN(3))
 #define VAL_GPIOD_ODR               0x00000002
 //#define VAL_GPIOD_ODR               0x0000000A

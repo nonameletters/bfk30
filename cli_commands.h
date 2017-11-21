@@ -50,6 +50,7 @@ void cmd_bdfu(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_pr(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_bootCfg(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_tmpSense(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_mezOnOff(BaseSequentialStream *chp, int argc, char *argv[]);
 
 void otpProrCfg0(BaseSequentialStream *chp);
 
@@ -63,4 +64,10 @@ void powerOff(void);
 void powerToggle(void);
 void baikalReset(void);
 
+void mezOn(void);
+void mezOff(void);
+void mezToggle(void);
+
+void printPowerStatus(void);
+void printStatusMessage(const char *msg, uint32_t status, const char *good, const char *bad);
 #endif /* CLI_COMMANDS_H_ */

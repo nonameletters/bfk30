@@ -506,31 +506,46 @@ void idtOff(void)
 // ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
 uint16_t getIdtAddr(void)
 {
-	uint8_t cur = 0;
-	uint8_t defConfSize = CG_REGISTER_NUM;
-
 	uint16_t result = 0x0000;
-	for (cur = 0; cur < defConfSize; ++cur)
-	{
-		result += readByteBlock(&I2CD2, CG_DEFAULT_ADR, MAIN_CG_CONF[cur].regNum);
-	}
 
-	if (result != 0)
+	result += readByteBlock(&I2CD2, CG_DEFAULT_ADR, REG_RAM0_DEVICE_ID);
+	if (result == 0xFF)
 	{
 		return CG_DEFAULT_ADR;
 	}
 
 	result = 0x0000;
-	for (cur = 0; cur < defConfSize; ++cur)
-	{
-		result += readByteBlock(&I2CD2, CG_ADDITION_ADR, MAIN_CG_CONF[cur].regNum);
-	}
-
+	result += readByteBlock(&I2CD2, CG_ADDITION_ADR, REG_RAM0_DEVICE_ID);
 	if (result != 0)
 	{
 		return CG_ADDITION_ADR;
 	}
 
+//  That was an old method to detect CG. Now we trying to use new. It is faster.
+//	uint8_t cur = 0;
+//	uint8_t defConfSize = CG_REGISTER_NUM;
+//
+//	uint16_t result = 0x0000;
+//	for (cur = 0; cur < defConfSize; ++cur)
+//	{
+//		result += readByteBlock(&I2CD2, CG_DEFAULT_ADR, MAIN_CG_CONF[cur].regNum);
+//	}
+//
+//	if (result != 0)
+//	{
+//		return CG_DEFAULT_ADR;
+//	}
+//
+//	result = 0x0000;
+//	for (cur = 0; cur < defConfSize; ++cur)
+//	{
+//		result += readByteBlock(&I2CD2, CG_ADDITION_ADR, MAIN_CG_CONF[cur].regNum);
+//	}
+//
+//	if (result != 0)
+//	{
+//		return CG_ADDITION_ADR;
+//	}
 	return 0x00;
 }
 

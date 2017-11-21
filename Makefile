@@ -100,7 +100,7 @@ MIPSGCC = ~/Documents/MIPS/mips-mti-elf/2016.05-03/bin/mips-mti-elf-
 # Define project name here
 PROJECT_name = bmc
 #NOTE: use EVEN version numbers for 16.1.x ChibiOS kernel
-PROJECT_version = v3.0.0.4
+PROJECT_version = v3.0.1.1
 PROJECT = $(PROJECT_name)_$(PROJECT_version)
 # Target compiler path/prefix
 #TRGT = arm-none-eabi
