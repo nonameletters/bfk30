@@ -23,8 +23,8 @@
 #define CG_DEFAULT_ADR  0x6A // 0xD4 >> 1
 #define CG_ADDITION_ADR 0x68 // 0xD0 >> 1
 
-//#define CG_REGISTER_NUM     106  // Decimal 106
-#define CG_REGISTER_NUM     84  // Decimal 106
+#define CG_REGISTER_NUM     106  // Decimal 106
+//#define CG_REGISTER_NUM     84  // Decimal 106
 
 typedef struct __cgStruct
 {
@@ -37,6 +37,14 @@ typedef enum CgStatus
 	CG_STAT_PROG,
 	CG_STAT_ERASED
 } CgStatus_t;
+
+typedef enum CgFodMod
+{
+	MOD_UNDEF,
+	MOD_OWN,
+	MOD_PREV_CH,
+	MOD_OFF
+} CgFodMod_t;
 
 extern CgStatus_t cgIdtStatus;
 
@@ -172,5 +180,8 @@ uint16_t getIdtAddr(void);
 // ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
 float getFeedBackDivider(void);
 float getFodOut(uint8_t outNumber);
+
+CgFodMod_t getFodMod(uint8_t number);
+
 
 #endif /* CG_5P49V5901_H_ */

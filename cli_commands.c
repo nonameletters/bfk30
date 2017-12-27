@@ -18,7 +18,7 @@ sFLASH_USBDriver SFDU1;
 
 const ShellCommand commands[] =
 {
-    {"pwr",   cmd_power, "Enable/Disable board. power [on | off | cycle | status]"},
+    {"pwr",   cmd_power, "Enable/Disable board. power [on | off | cycle | stat]"},
 	{"sense", cmd_sense, "Information from power sensors. sense [p]"},
 	{"idt",   cmd_idt, "Enable/Disable clock generator."},
 	{"cg",    cmd_cgInfo, "Print Clock generator information. cg [stat|r]"},
@@ -30,6 +30,8 @@ const ShellCommand commands[] =
 	{"btcfg", cmd_bootCfg, "Changes boot source. btcfg [brom | flash]"},
 	{"ts",    cmd_tmpSense, "Temperature Sensor"},
 	{"mez",   cmd_mezOnOff, "Enabling/Disabling mezanine (XP25). mez [on | off]"},
+	{"bs",    cmd_baikalSpeed, "Baikal CPU speed [f(full) | h(half)]"},
+	{"td",    cmd_toggleEnPwrRefClk, "Toggle EN_PWR_REF_CLK"},
     {NULL, NULL, NULL}
 };
 
@@ -312,7 +314,7 @@ void cmd_power(BaseSequentialStream *chp, int argc, char *argv[])
 
 	if (argc == 0)
 	{
-		chprintf(chp, "Bad parameters need on|off|cycle|status\r\n");
+		chprintf(chp, "Bad parameters need on|off|cycle|stat\r\n");
 		return;
 	}
 
@@ -330,7 +332,7 @@ void cmd_power(BaseSequentialStream *chp, int argc, char *argv[])
     	chThdSleepMilliseconds(1000);
     	powerOn();
     }
-    else if (strcmp(argv[0], "status") == 0)
+    else if (strcmp(argv[0], "stat") == 0)
     {
     	printPowerStatus();
     }
@@ -528,23 +530,51 @@ void cmd_cgInfo(BaseSequentialStream *chp, int argc, char *argv[])
 		VCOFreq = 25 * fb;
 		chprintf(chp, "VCO freq %5.2f\r\n", VCOFreq);
 
+
+		// Channel 1 FOD
 		float t = getFodOut(1);
 		uint32_t tmpInt = (uint32_t) (VCOFreq / (t*2));
-		float of = (tmpInt == 100)  ? 100 : VCOFreq / (t*2);
+		float of = (tmpInt == 156)  ? 156.25 : VCOFreq / (t*2);
 		chprintf(chp, "Fod 1 divider: %5.3f \tChannel 1 out frequency: %5.3f\r\n", t, of);
 
-		t = getFodOut(2);
+
+		// Channel 2 FOD
+        if(getFodMod(2) == MOD_PREV_CH)
+        {
+        	t = getFodOut(1);
+        }
+        else
+        {
+        	t = getFodOut(2);
+        }
 		tmpInt = (uint32_t) (VCOFreq / (t*2));
-		of = (tmpInt == 156)  ? 156.25 : VCOFreq / (t*2);
+		of = (tmpInt == 100)  ? 100 : VCOFreq / (t*2);
 		chprintf(chp, "Fod 2 divider: %5.3f \tChannel 2 out frequency: %5.3f\r\n", t, of);
 
 
-		t = getFodOut(3);
+		// Channel 3 FOD
+        if(getFodMod(3) == MOD_PREV_CH)
+        {
+        	t = getFodOut(2);
+        }
+        else
+        {
+        	t = getFodOut(3);
+        }
 		tmpInt = (uint32_t) (VCOFreq / (t*2));
 		of = (tmpInt == 100)  ? 100 : VCOFreq / (t*2);
 		chprintf(chp, "Fod 3 divider: %5.3f \tChannel 3 out frequency: %5.3f\r\n", t, of);
 
-		t = getFodOut(4);
+
+		// Channel 4 FOD
+        if(getFodMod(4) == MOD_PREV_CH)
+        {
+        	t = getFodOut(3);
+        }
+        else
+        {
+        	t = getFodOut(4);
+        }
 		tmpInt = (uint32_t) (VCOFreq / (t*2));
 		of = (tmpInt == 100)  ? 100 : VCOFreq / (t*2);
 		chprintf(chp, "Fod 4 divider: %5.3f \tChannel 4 out frequency: %5.3f\r\n", t, of);
@@ -884,6 +914,35 @@ void cmd_mezOnOff(BaseSequentialStream *chp, int argc, char *argv[])
 }
 
 // ---------- ---------- ---------- ---------- ---------- ----------
+void cmd_baikalSpeed(BaseSequentialStream *chp, int argc, char *argv[])
+{
+	if (argc == 0)
+	{
+		chprintf(chp, "Bad parameters need f/h\r\n");
+		return;
+	}
+
+    if(strcmp(argv[0], "f") == 0)
+    {
+    	palClearPad(GPIOC, 0);
+    }
+    else if (strcmp(argv[0], "h") == 0)
+    {
+    	palSetPad(GPIOC, 0);
+    }
+    else
+    {
+
+    }
+}
+
+// ---------- ---------- ---------- ---------- ---------- ----------
+void cmd_toggleEnPwrRefClk(BaseSequentialStream *chp, int argc, char *argv[])
+{
+	palTogglePad(GPIOD, 3);
+}
+
+// ---------- ---------- ---------- ---------- ---------- ----------
 void otpProrCfg0(BaseSequentialStream *chp)
 {
 	chThdSleepMilliseconds(100);
@@ -947,7 +1006,8 @@ void powerOn(void)
 	ATX_POWER_ON();
 
     palSetPad(GPIOC, 2); // Enable 3V3
-    palSetPad(GPIOC, 8); // Enable 3V3
+    // palSetPad(GPIOC, 8); // Enable Mezanine 3V3
+    palSetPad(GPIOD, 1); // Enable VTT
 
 	idtOn();
 	palSetPad(GPIOB, 7);
@@ -961,7 +1021,7 @@ void powerOn(void)
 	chThdSleepMilliseconds(100);
 	palSetPad(GPIOD, 0);
 
-	palSetPad(GPIOD, 3);    // PWR_CLOCK_ENABLE
+	palSetPad(GPIOD, 3);    // EN_PWR_REF_CLK
 	mezOn();                // EN_3V3_MEZ (PB13)
 
 	if (cgIdtStatus == CG_STAT_ERASED)
@@ -984,7 +1044,8 @@ void powerOff(void)
 {
 	ATX_POWER_OFF();
 	palClearPad(GPIOC, 2); // Enable 3V3
-	palClearPad(GPIOC, 8); // Enable 3V3
+	//palClearPad(GPIOC, 8); // Enable 3V3
+	palClearPad(GPIOD, 1); // Disable VTT
 
 	idtOff();
 	palClearPad(GPIOB, 7);
@@ -1019,7 +1080,8 @@ void powerToggle(void)
 	 */
 	ATX_POWER_TOGGLE();        // PS_ON (PC6)
 	palTogglePad(GPIOC, 2);    // PLL_PLUS_100
-	palTogglePad(GPIOC, 8);    // Enable 3V3
+	//palTogglePad(GPIOC, 8);    // Enable 3V3
+	palTogglePad(GPIOD, 1);    // Toggle VTT
 
 	idtOnOff();                // EN_CLK_GEN (PB9)
 
@@ -1088,19 +1150,22 @@ void baikalReset(void)
 // ---------- ---------- ---------- ---------- ---------- ----------
 void mezOn(void)
 {
-	palSetPad(GPIOB, 13);    // EN_3V3_MEZ
+	//palSetPad(GPIOB, 13);    // EN_3V3_MEZ
+	palSetPad(GPIOC, 8);    // EN_3V3_MEZ
 }
 
 // ---------- ---------- ---------- ---------- ---------- ----------
 void mezOff(void)
 {
-	palClearPad(GPIOB, 13);  // EN_3V3_MEZ
+//	palClearPad(GPIOB, 13);  // EN_3V3_MEZ
+	palClearPad(GPIOC, 8);  // EN_3V3_MEZ
 }
 
 // ---------- ---------- ---------- ---------- ---------- ----------
 void mezToggle(void)
 {
-	palTogglePad(GPIOB, 13); // EN_3V3_MEZ
+//	palTogglePad(GPIOB, 13); // EN_3V3_MEZ
+	palTogglePad(GPIOC, 8); // EN_3V3_MEZ
 }
 
 // ---------- ---------- ---------- ---------- ---------- ----------
@@ -1132,6 +1197,18 @@ void printPowerStatus(void)
 	chprintf(sdu_stdio, "// ---------- ---------- ----------\r\n");
 	chprintf(sdu_stdio, "// PIN STATUS\r\n");
 
+	// This pin is inverted. Be careful.
+	// Inverse RES to output it in a common way.
+	res = palReadPad(GPIOC, 0);
+	(res == 0x00000000) ? (res = 0x000000001) : (res = 0x000000000);
+	printStatusMessage("B-SPEED# (PC0-15)", res, "FULL", "HALF");
+
+	res = palReadPad(GPIOC, 1);
+	printStatusMessage("PLL_PLUS_50 (PC1-16) DEF-OFF", res,  "ON", "OFF");
+
+	res = palReadPad(GPIOC, 2);
+	printStatusMessage("PLL_PLUS_100 (PC2-17)", res,  "ON", "OFF");
+
 	res = palReadPad(GPIOC, 3);
 	printStatusMessage("EN_PLL (PC3-18)", res,  "ON", "OFF");
 
@@ -1147,8 +1224,17 @@ void printPowerStatus(void)
 	(res == 0x00000000) ? (res = 0x000000001) : (res = 0x000000000);
 	printStatusMessage("PS_ON# (PC6-63)", res, "ON", "OFF");
 
+	res = palReadPad(GPIOC, 7);
+	printStatusMessage("PWR_OK (PC7-64)", res,  "ON", "OFF");
+
 	res = palReadPad(GPIOC, 8);
-	printStatusMessage("EN_3V3 (PC8-65)", res,  "ON", "OFF");
+	printStatusMessage("EN_3V3_MEZ (PC8-65)", res,  "ON", "OFF");
+
+	res = palReadPad(GPIOC, 10);
+	printStatusMessage("1V5 VTT OK (PC10-78)", res,  "OK", "FAIL");
+
+	res = palReadPad(GPIOC, 11);
+	printStatusMessage("0V95 VTT OK (PC11-79)", res,  "OK", "FAIL");
 
 	res = palReadPad(GPIOC, 13);
 	printStatusMessage("EN_0V95 (PC13-7)", res,  "ON", "OFF");
@@ -1156,14 +1242,33 @@ void printPowerStatus(void)
 	res = palReadPad(GPIOD, 0);
 	printStatusMessage("EN_CLK_REF (PD0-81)", res,  "ON", "OFF");
 
-	res = palReadPad(GPIOB, 13);
-	printStatusMessage("EN_3V3_MEZ (PB13-52)", res,  "ON", "OFF");
+	res = palReadPad(GPIOD, 1);
+	printStatusMessage("EN_VTT (PD1-82)", res,  "ON", "OFF");
+
+	res = palReadPad(GPIOB, 9);
+	printStatusMessage("EN_CLK_IDT (PB9-96)", res,  "ON", "OFF");
+
+//  This pins dosn't work correctly on BFK 3.1
+//	res = palReadPad(GPIOB, 12);
+//	printStatusMessage("PCI_PRSNT1 (PB12-51)", res,  "ON", "OFF");
+//
+//	res = palReadPad(GPIOB, 13);
+//	printStatusMessage("PCI_WAKE (PB13-52)", res,  "ON", "OFF");
+
+	res = palReadPad(GPIOB, 14);
+	printStatusMessage("PWRGD_REF_CLK (PB14-53)", res,  "OK", "FAIL");
+
+	res = palReadPad(GPIOB, 15);
+	printStatusMessage("PWRGD_0V95 (PB15-54)", res,  "OK", "FAIL");
+
+	res = palReadPad(GPIOD, 3);
+	printStatusMessage("EN_PWR_REF_CLK  (PD3-84)", res,  "ON", "OFF");
 }
 
 // ---------- ---------- ---------- ---------- ---------- ----------
 void printStatusMessage(const char *msg, uint32_t status, const char *good, const char *bad)
 {
-	chprintf(sdu_stdio, "%-21s: \t", msg);
+	chprintf(sdu_stdio, "%-28s: \t", msg);
 	if (status != 0)
 	{
 		chprintf(sdu_stdio, "\33[32m");

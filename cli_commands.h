@@ -51,6 +51,8 @@ void cmd_pr(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_bootCfg(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_tmpSense(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_mezOnOff(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_baikalSpeed(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_toggleEnPwrRefClk(BaseSequentialStream *chp, int argc, char *argv[]);
 
 void otpProrCfg0(BaseSequentialStream *chp);
 
