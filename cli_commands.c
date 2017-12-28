@@ -1005,7 +1005,7 @@ void powerOn(void)
 {
 	ATX_POWER_ON();
 
-    palSetPad(GPIOC, 2); // Enable 3V3
+    //palSetPad(GPIOC, 2); // Enable 3V3
     // palSetPad(GPIOC, 8); // Enable Mezanine 3V3
     palSetPad(GPIOD, 1); // Enable VTT
 
@@ -1043,7 +1043,7 @@ void powerOn(void)
 void powerOff(void)
 {
 	ATX_POWER_OFF();
-	palClearPad(GPIOC, 2); // Enable 3V3
+	//palClearPad(GPIOC, 2); // Enable 3V3
 	//palClearPad(GPIOC, 8); // Enable 3V3
 	palClearPad(GPIOD, 1); // Disable VTT
 
@@ -1079,7 +1079,7 @@ void powerToggle(void)
 	 * POWER PINS. Enabling or Disabling all power sources
 	 */
 	ATX_POWER_TOGGLE();        // PS_ON (PC6)
-	palTogglePad(GPIOC, 2);    // PLL_PLUS_100
+	//palTogglePad(GPIOC, 2);    // PLL_PLUS_100
 	//palTogglePad(GPIOC, 8);    // Enable 3V3
 	palTogglePad(GPIOD, 1);    // Toggle VTT
 
@@ -1207,7 +1207,7 @@ void printPowerStatus(void)
 	printStatusMessage("PLL_PLUS_50 (PC1-16) DEF-OFF", res,  "ON", "OFF");
 
 	res = palReadPad(GPIOC, 2);
-	printStatusMessage("PLL_PLUS_100 (PC2-17)", res,  "ON", "OFF");
+	printStatusMessage("PLL_PLUS_100 (PC2-17) DEF-OFF", res,  "ON", "OFF");
 
 	res = palReadPad(GPIOC, 3);
 	printStatusMessage("EN_PLL (PC3-18)", res,  "ON", "OFF");
@@ -1268,7 +1268,7 @@ void printPowerStatus(void)
 // ---------- ---------- ---------- ---------- ---------- ----------
 void printStatusMessage(const char *msg, uint32_t status, const char *good, const char *bad)
 {
-	chprintf(sdu_stdio, "%-28s: \t", msg);
+	chprintf(sdu_stdio, "%-29s: \t", msg);
 	if (status != 0)
 	{
 		chprintf(sdu_stdio, "\33[32m");

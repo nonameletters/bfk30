@@ -240,8 +240,8 @@
                                      PIN_MODE_OUTPUT(14)      | \
                                      PIN_MODE_OUTPUT(15))
 #define VAL_GPIOC_OTYPER            (PIN_OTYPE_PUSHPULL(0)    | \
-                                     PIN_OTYPE_PUSHPULL(1)   | \
-									 PIN_OTYPE_PUSHPULL(2)   | \
+                                     PIN_OTYPE_PUSHPULL(1)    | \
+									 PIN_OTYPE_PUSHPULL(2)    | \
 									 PIN_OTYPE_PUSHPULL(3)    | \
 									 PIN_OTYPE_PUSHPULL(6)    | \
 									 PIN_OTYPE_OPENDRAIN(9)   | \
@@ -249,7 +249,6 @@
 #define VAL_GPIOC_OSPEEDR           0x00000000
 #define VAL_GPIOC_PUPDR             (PIN_PUDR_PULLDOWN(0)     | \
 		                             PIN_PUDR_PULLDOWN(1)     | \
-		                             PIN_PUDR_PULLDOWN(2)     | \
                                      PIN_PUDR_PULLDOWN(3)     | \
 									 PIN_PUDR_FLOATING(5)     | \
                                      PIN_PUDR_PULLUP(6)       | \
@@ -284,23 +283,22 @@
 		                             PIN_MODE_OUTPUT(1)       | \
 									 PIN_MODE_OUTPUT(2)       | \
 									 PIN_MODE_OUTPUT(3)       | \
-                                     PIN_MODE_OUTPUT(4))
+									 PIN_MODE_OUTPUT(4))
 #define VAL_GPIOD_OTYPER            (PIN_OTYPE_PUSHPULL(0)    | \
 		                             PIN_OTYPE_PUSHPULL(1)    | \
                                      PIN_OTYPE_PUSHPULL(2)    | \
 									 PIN_OTYPE_PUSHPULL(3)    | \
-                                     PIN_OTYPE_PUSHPULL(4))
+									 PIN_OTYPE_PUSHPULL(4))
 #define VAL_GPIOD_OSPEEDR           (PIN_OSPEED_100M(1)       | \
                                      PIN_OSPEED_100M(2)       | \
-		                             PIN_OSPEED_100M(3)       | \
-                                     PIN_OSPEED_100M(4))
+                                     PIN_OSPEED_100M(3)       | \
+		                             PIN_OSPEED_100M(4))
 #define VAL_GPIOD_PUPDR             (PIN_PUDR_FLOATING(0)     | \
                                      PIN_PUDR_PULLDOWN(1)     | \
                                      PIN_PUDR_PULLDOWN(2)     | \
 									 PIN_PUDR_PULLDOWN(3)     | \
-                                     PIN_PUDR_PULLDOWN(4))
+									 PIN_PUDR_PULLDOWN(4))
 #define VAL_GPIOD_ODR               0x00000000
-//#define VAL_GPIOD_ODR               0x00000002
 //#define VAL_GPIOD_ODR               0x0000000A
 #define VAL_GPIOD_AFRL				0x00000000
 #define VAL_GPIOD_AFRH				0x00000000
